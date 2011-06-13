@@ -253,7 +253,7 @@ class views_plugin_style_geojson extends views_plugin_style {
             $feature['geometry'] = 
               array(
                 'type' => 'Point',
-                'coordinates' => array($lat, $lon));
+                'coordinates' => array($lon, $lat));
           }
 
           $excluded_fields[] = $lat_field;
