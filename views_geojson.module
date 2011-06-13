@@ -1,0 +1,16 @@
+<?php
+
+/**
+ * @file views_geojson.module
+ * Provide a GeoJSON Views feed style.
+ */
+
+/**
+* Implements hook_views_api().
+*/
+function views_geojson_views_api() {
+  return array(
+    'api' => 2,
+    'path' => drupal_get_path('module', 'views_geojson') . '/views',
+  );
+}
