@@ -401,6 +401,9 @@ class views_plugin_style_geojson extends views_plugin_style {
   	$view = $this->view;
   	$options = $this->options;
   	$field = $view->field;
+  	
+  	$display = $this->display;
+  	$display = $this->rows;
 
  	  $features = array();
     foreach ($view->result as $count => $row) {

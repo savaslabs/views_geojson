@@ -164,12 +164,10 @@ function _views_geojson_render_fields($view, $row) {
   
   // points with Latitude & Longitude
   if (!empty($data_source['value']['other_latlon'])) {
-    //$lat_field = $fields[$data_source['other_lat']]['field_alias'];
-    //$lon_field = $fields[$data_source['other_lon']]['field_alias'];
-    //$lat_field = $row->field[$data_source['other_lat']]['field_alias'];
-    //$lon_field = $row->field[$data_source['other_lon']]['field_alias'];
-    //$lon = floatval($row->$lon_field);
-    //$lat = floatval($row->$lat_field);
+    $lat_field = $rendered_fields[$data_source['other_lat']];
+    $lon_field = $rendered_fields[$data_source['other_lon']];
+    $lon = floatval($lon_field->raw);
+    $lat = floatval($lat_field->raw);
     if (!empty($lat) && !empty($lon)) {
       $feature['geometry'] = 
         array(
@@ -206,8 +204,8 @@ function _views_geojson_render_fields($view, $row) {
   // as choosen through interface
   $name_field = NULL;
   if ($data_source['name_field']) {
-    $name_field = $fields[$data_source['name_field']]['field_alias'];
-    $feature['properties']['name'] = $rendered_record[$name_field];
+    $name_field = $rendered_fields[$data_source['name_field']]->id;
+    $feature['properties']['name'] = $rendered_fields[$name_field]->content;
     $excluded_fields[] = $name_field;
   }
   else {
@@ -216,8 +214,8 @@ function _views_geojson_render_fields($view, $row) {
   
   $description_field = NULL;
   if ($data_source['description_field']) {
-    $description_field = $fields[$data_source['description_field']]['field_alias'];
-    $feature['properties']['description'] = $rendered_record[$description_field];
+    $description_field = $rendered_fields[$data_source['description_field']]->id;
+    $feature['properties']['name'] = $rendered_fields[$description_field]->content;
     $excluded_fields[] = $description_field;
   }
   else {
@@ -234,122 +232,20 @@ function _views_geojson_render_fields($view, $row) {
   // - Name/description (already processed)
   // - Views "excluded" fields
   foreach ($field_ids as $id) {
-  //foreach ($fields as $fid => $field) {
     $field = $view->field[$id];
-    $field_alias = $field['field_alias'];
+    $field_alias = $field->field_alias;
     if (!in_array($field_alias, $excluded_fields, TRUE)) {
       // Use regular field name as this is easier to understand
-      $feature['properties'][$fid] = is_numeric($row->$field_alias) ? 
-        floatval($row->$field_alias) :
-        $row->$field_alias;
-      $feature['properties'][$fid . "_rendered"] = is_numeric($rendered_record[$field_alias]) ? 
-        floatval($rendered_record[$field_alias]) : 
-        $rendered_record[$field_alias];
+      $feature['properties'][$field_alias] = is_numeric($rendered_fields[$name_field]->raw) ? 
+        floatval($rendered_fields[$name_field]->raw) :
+        $rendered_fields[$name_field]->raw;
+      $feature['properties'][$field_alias . "_rendered"] = is_numeric($rendered_fields[$name_field]->content) ? 
+        floatval($rendered_fields[$name_field]->content) : 
+        $rendered_fields[$name_field]->content;
     }
   }
 
   return $feature;
-  
-  //------
-  
-  //$data_source = $this_->options['data_source'];
-  //
-  //$excluded_fields = array();
-  //$feature = array();
-  //$rendered_record = array();
-
-  //// Note that excluded fields are still rendered in case they are used
-  //// as render tokens in later fields.
-  //foreach ($handlers as $hid => $handler) {
-  //  $rendered_record[$handler->field_alias] = $handler->advanced_render($record);
-  //  if (!empty($handler->options['exclude'])) {
-  //    $excluded_fields[] = $handler->field_alias;
-  //  }
-  //}
-  
-  //if (!empty($data_source['value']['other_latlon'])) {
-  //  $lat_field = $fields[$data_source['other_lat']]['field_alias'];
-  //  $lon_field = $fields[$data_source['other_lon']]['field_alias'];
-  //  $lon = floatval($record->$lon_field);
-  //  $lat = floatval($record->$lat_field);
-  //  if (!empty($lat) && !empty($lon)) {
-  //    $feature['geometry'] = 
-  //      array(
-  //        'type' => 'Point',
-  //        'coordinates' => array($lon, $lat));
-  //  }
-  //
-  //  $excluded_fields[] = $lat_field;
-  //  $excluded_fields[] = $lon_field;
-  //}
-  //elseif ($data_source['value']['other_boundingbox']) {
-  //  list($top_field, $right_field, 
-  //      $left_field, $bottom_field) = $this_->get_bounds($fields, $data_source);
-  //  $top =    floatval($record->$top_field);
-  //  $right =  floatval($record->$right_field);
-  //  $left =   floatval($record->$left_field);
-  //  $bottom = floatval($record->$bottom_field);
-  //  if (!empty($top) && !empty($left)) {
-  //    $feature['geometry'] = 
-  //      array(
-  //        'type' => 'Polygon',
-  //        'coordinates' => array(
-  //          array($left, $top),
-  //          array($right, $top),
-  //          array($right, $bottom),
-  //          array($left, $bottom))
-  //        );
-  //  }
-  //
-  //  array_push($excluded_fields, $top_field, $right_field,
-  //    $left_field, $bottom_field);
-  //}
-  
-  //// Add the name and description attributes
-  //// as choosen through interface
-  //$name_field = NULL;
-  //if ($data_source['name_field']) {
-  //  $name_field = $fields[$data_source['name_field']]['field_alias'];
-  //  $feature['properties']['name'] = $rendered_record[$name_field];
-  //  $excluded_fields[] = $name_field;
-  //}
-  //else {
-  //  $feature['properties']['name'] = '';
-  //}
-  //
-  //$description_field = NULL;
-  //if ($data_source['description_field']) {
-  //  $description_field = $fields[$data_source['description_field']]['field_alias'];
-  //  $feature['properties']['description'] = $rendered_record[$description_field];
-  //  $excluded_fields[] = $description_field;
-  //}
-  //else {
-  //  $feature['properties']['description'] = '';
-  //}
-  //
-  //// Only add features with WKT data
-  //if (empty($feature['geometry'])) {
-  //  continue;
-  //}
-  
-  //// Fill in attributes that are not:
-  //// - Coordinate/bounding box fields
-  //// - Name/description (already processed)
-  //// - Views "excluded" fields
-  //foreach ($fields as $fid => $field) {
-  //  $field_alias = $field['field_alias'];
-  //  if (!in_array($field_alias, $excluded_fields, TRUE)) {
-  //    // Use regular field name as this is easier to understand
-  //    $feature['properties'][$fid] = is_numeric($record->$field_alias) ? 
-  //      floatval($record->$field_alias) :
-  //      $record->$field_alias;
-  //    $feature['properties'][$fid . "_rendered"] = is_numeric($rendered_record[$field_alias]) ? 
-  //      floatval($rendered_record[$field_alias]) : 
-  //      $rendered_record[$field_alias];
-  //  }
-  //}
-  
-  //return $feature;
 }
 
 /**
