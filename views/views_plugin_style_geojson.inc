@@ -251,193 +251,38 @@ class views_plugin_style_geojson extends views_plugin_style {
   }
 
   /**
-   * Map features
-   *
-   * $records:  $this->render_grouping($result, $this->options['grouping']);
-   */
-  function map_features($records = array()) {
-
-    //$features = array();
-    //$data_source = $this->options['data_source'];
-    //
-    //// Get list of fields in this view
-    //$handlers = $this->display->handler->get_handlers('field');
-    //$fields = array();
-    //foreach ($handlers as $field_id => $handler) {
-    //  $fields[$field_id] = $handler->definition;
-    //  $fields[$field_id]['field_alias'] = $handler->field_alias;
-    //}
-    //
-    //if (!empty($this->options['grouping'])) {
-    //}
-    //else {
-    //  $excluded_fields = array();
-    //  $records = array_shift($records);
-    //
-    //  foreach ($records as $id => $record) {
-    //    
-    //    $feature = array();
-    //    $rendered_record = array();
-    //    // Note that excluded fields are still rendered in case they are used
-    //    // as render tokens in later fields.
-    //    foreach ($handlers as $hid => $handler) {
-    //      $rendered_record[$handler->field_alias] = $handler->advanced_render($record);
-    //      if (!empty($handler->options['exclude'])) {
-    //        $excluded_fields[] = $handler->field_alias;
-    //      }
-    //    }
-    //
-    //    if (!empty($data_source['value']['other_latlon'])) {
-    //      $lat_field = $fields[$data_source['other_lat']]['field_alias'];
-    //      $lon_field = $fields[$data_source['other_lon']]['field_alias'];
-    //      $lon = floatval($record->$lon_field);
-    //      $lat = floatval($record->$lat_field);
-    //      if (!empty($lat) && !empty($lon)) {
-    //        $feature['geometry'] = 
-    //          array(
-    //            'type' => 'Point',
-    //            'coordinates' => array($lon, $lat));
-    //      }
-    //
-    //      $excluded_fields[] = $lat_field;
-    //      $excluded_fields[] = $lon_field;
-    //    }
-    //    elseif ($data_source['value']['other_boundingbox']) {
-    //      list($top_field, $right_field, 
-    //          $left_field, $bottom_field) = $this->get_bounds($fields, $data_source);
-    //      $top =    floatval($record->$top_field);
-    //      $right =  floatval($record->$right_field);
-    //      $left =   floatval($record->$left_field);
-    //      $bottom = floatval($record->$bottom_field);
-    //      if (!empty($top) && !empty($left)) {
-    //        $feature['geometry'] = 
-    //          array(
-    //            'type' => 'Polygon',
-    //            'coordinates' => array(
-    //              array($left, $top),
-    //              array($right, $top),
-    //              array($right, $bottom),
-    //              array($left, $bottom))
-    //            );
-    //      }
-    //
-    //      array_push($excluded_fields, $top_field, $right_field,
-    //        $left_field, $bottom_field);
-    //    }
-    //
-    //    // Add the name and description attributes
-    //    // as choosen through interface
-    //    $name_field = NULL;
-    //    if ($data_source['name_field']) {
-    //      $name_field = $fields[$data_source['name_field']]['field_alias'];
-    //      $feature['properties']['name'] = $rendered_record[$name_field];
-    //      $excluded_fields[] = $name_field;
-    //    }
-    //    else {
-    //      $feature['properties']['name'] = '';
-    //    }
-    //    $description_field = NULL;
-    //    if ($data_source['description_field']) {
-    //      $description_field = $fields[$data_source['description_field']]['field_alias'];
-    //      $feature['properties']['description'] = $rendered_record[$description_field];
-    //      $excluded_fields[] = $description_field;
-    //    }
-    //    else {
-    //      $feature['properties']['description'] = '';
-    //    }
-    //    
-    //    // Only add features with WKT data
-    //    if (empty($feature['geometry'])) {
-    //      continue;
-    //    }
-    //
-    //    // Fill in attributes that are not:
-    //    // - Coordinate/bounding box fields
-    //    // - Name/description (already processed)
-    //    // - Views "excluded" fields
-    //    foreach ($fields as $fid => $field) {
-    //      $field_alias = $field['field_alias'];
-    //      if (!in_array($field_alias, $excluded_fields, TRUE)) {
-    //        // Use regular field name as this is easier to understand
-    //        $feature['properties'][$fid] = is_numeric($record->$field_alias) ? 
-    //          floatval($record->$field_alias) :
-    //          $record->$field_alias;
-    //        $feature['properties'][$fid . "_rendered"] = is_numeric($rendered_record[$field_alias]) ? 
-    //          floatval($rendered_record[$field_alias]) : 
-    //          $rendered_record[$field_alias];
-    //      }
-    //    }
-    //    
-    //    $features[] = $feature;
-    //    // $features[] = theme('openlayers_views_render_feature', $feature, $record);
-    //  }
-    //  return $features;
-    //}
-  }
-
-  /**
    * Implementation of view_style_plugin::theme_functions(). Returns an array of theme functions to use
    * for the current style plugin
-   * @return array 
+   * @return array
    */
   function theme_functions() {
-    $options = $this->options;
-    $hook = 'views_views_geojson_style';
-  	return views_theme_functions($hook, $this->view, $this->display);
+    return views_theme_functions('views_views_geojson_style', $this->view, $this->display);
   }
 
   /**
    * Implementation of views_style_plugin::additional_theme_functions(). Returns empty array.
    * @return array
-   */  
+   */
   function additional_theme_functions() {
-  	return array();
+    return array();
   }
     
   /**
    * Implementation of view_style_plugin::render()
    */
   function render() {
-  	$view = $this->view;
-  	$options = $this->options;
-  	$field = $view->field;
-  	
-  	$display = $this->display;
-  	$display = $this->rows;
+    $view = $this->view;
+    $options = $this->options;
+    $field = $view->field;
+    $display = $this->display;
 
- 	  $features = array();
+    $features = array();
     foreach ($view->result as $count => $row) {
       $view->row_index = $count;
       $features[] = _views_geojson_render_fields($view, $row);
     }
     unset($view->row_index);
-    
-    $features_collection = array(
-      'type' => 'FeatureCollection', 
-      'features' => $features,
-    );
-    //return json_encode($features_collection);
 
-    //return theme($this->theme_functions(), $this->view, $this->options, $rows);
-    //$test = views_theme_functions('views_views_geojson_style', $this->view, $this->display);
-    //return theme($test, $this->view, $this->options, $rows);
-    return theme(views_theme_functions('views_views_geojson_style', $view, $display), array('view' => $view, 'options' => $options, 'rows' => $rows));
-    //return theme($this->theme_functions(), array('view' => $view, 'options' => $options, 'rows' => $rows));
-    //return theme(views_theme_functions('views_views_geojson_style', $this->view, $this->display), $this->view, $this->options, $rows);
- 	}
-
-  ///**
-  // * Render the map features.
-  // */
-  //function render($result) {
-  //  // Check for live preview.
-  //  //if (!empty($this->view->live_preview)) {
-  //  //  return t('OpenLayers views are not compatible with live preview.');
-  //  //}
-  //
-  //  // Group the rows according to the grouping field, if specified.
-  //  $sets = $this->render_grouping($result, $this->options['grouping']);
-  //  return $this->map_features($sets);
-  //}
-  
+    return theme($this->theme_functions(), array('view' => $view, 'options' => $options, 'features' => $features));
+  }
 }

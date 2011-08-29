@@ -13,7 +13,7 @@
  * @see views_json.views.inc
  */ 
 
-function template_preprocess_views_views_geojson_style(&$vars) {	
+function template_preprocess_views_views_geojson_style(&$vars) {
   $view = $vars["view"];
   $rows = $vars["rows"];
   $options = $vars["options"];

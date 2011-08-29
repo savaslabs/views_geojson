@@ -17,8 +17,8 @@ function views_geojson_views_plugins() {
         'title'            => t('GeoJSON Feed'),
         'help'             => t('Displays nodes in the GeoJSON data format.'),
         'handler'          => 'views_plugin_style_geojson',
-        'theme'            => 'views_view_geojson',
-        //'theme file'       => 'views_view_geojson.theme.inc',
+        'theme'            => 'views_views_geojson_style',
+        'theme file'       => 'views_views_geojson_style.theme.inc',
         'theme path'       => $path .'/views',
         'path'             => $path .'/views',
         'uses row plugin'  => FALSE,
@@ -27,8 +27,8 @@ function views_geojson_views_plugins() {
         //'uses grouping'    => FALSE,
         //'type'             => 'feed',
         'type'             => 'normal',
-        //'help_topic'     => 'style-json',
-        'even empty'     => TRUE
+        //'help_topic'     => 'style-geojson',
+        'even empty'     => TRUE,
       ),
     ),
   );
