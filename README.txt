@@ -5,7 +5,9 @@ CONTENTS OF THIS FILE
 * Requirements
 * Installation
 * Usage
+* To Do
 * Credits
+* Current Maintainers
 
 
 SUMMARY
@@ -51,12 +53,20 @@ USAGE
      Drupal execution.
 
 
+TO DO
+-----
+* Sort out BoundingBox and OpenLayers WKT support.
+* Support addditional GeoJSON feature types like LineString.
+* Support an optional altitude coordinate for Point positions.
+* Support additional coordinate systems.
+
+
 CREDITS
 -------
 
 This module was originally born from a patch by tmcw to the OpenLayers module (http://drupal.org/node/889190#comment-3376628) and adapted to model the Views Datasource module (http://drupal.org/project/views_datasource).
 
-Much of the code draws directly from these sources.
+Much of the code is drawn directly from these sources.
 
 
 CURRENT MAINTAINERS
