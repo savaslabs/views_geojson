@@ -18,7 +18,6 @@ function views_geojson_views_plugins() {
         'help'             => t('Displays nodes in the GeoJSON data format.'),
         'handler'          => 'views_plugin_style_geojson',
         'theme'            => 'views_views_geojson_style',
-        'theme file'       => 'views_views_geojson_style.theme.inc',
         'theme path'       => $path .'/views',
         'path'             => $path .'/views',
         'uses row plugin'  => FALSE,
