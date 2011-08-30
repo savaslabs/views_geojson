@@ -205,7 +205,7 @@ function _views_geojson_render_fields($view, $row) {
   $description_field = NULL;
   if ($data_source['description_field']) {
     $description_field = $rendered_fields[$data_source['description_field']]->id;
-    $feature['properties']['name'] = $rendered_fields[$description_field]->content;
+    $feature['properties']['description'] = $rendered_fields[$description_field]->content;
     $excluded_fields[] = $description_field;
   }
   else {
