@@ -113,15 +113,6 @@ function _views_geojson_render_fields($view, $row) {
   $feature = array();
   $rendered_record = array();
   
-  //$this_ = $view;
-  //// Get list of fields in this view
-  //$handlers = $this_->display->handler->get_handlers('field');
-  //$fields = array();
-  //foreach ($handlers as $field_id => $handler) {
-  //  $fields[$field_id] = $handler->definition;
-  //  $fields[$field_id]['field_alias'] = $handler->field_alias;
-  //}
-  
   $data_source = $view->style_plugin->options['data_source'];
   
   $field_ids = array_keys($view->field);
