@@ -62,4 +62,4 @@ Much of the code draws directly from these sources.
 CURRENT MAINTAINERS
 -------------------
 
-* jeffschuler - http://drupal.org/user/147331
+* jeffschuler - http://drupal.org/user/239714
