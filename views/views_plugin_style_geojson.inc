@@ -1,7 +1,7 @@
 <?php
 
 /**
- * @file views_plugin_style_geojson.inc
+ * @file
  * Views style plugin to render nodes in the GeoJSON format.
  *
  * @see views_plugin_style_geojson.inc
@@ -30,8 +30,8 @@ class views_plugin_style_geojson extends views_plugin_style {
         'description_field' => array('default' => 0),
       ),
     );
-    $options['attributes'] = array('default'=> NULL, 'translatable' => FALSE);
-    $options['jsonp_prefix'] = array('default'=> NULL, 'translatable' => FALSE);
+    $options['attributes'] = array('default' => NULL, 'translatable' => FALSE);
+    $options['jsonp_prefix'] = array('default' => NULL, 'translatable' => FALSE);
     $options['content_type'] = array('default' => 'default', 'translatable' => FALSE);
     $options['using_views_api_mode'] = array('default' => FALSE, 'translatable' => FALSE);
     return $options;
@@ -204,7 +204,7 @@ class views_plugin_style_geojson extends views_plugin_style {
       '#options'        => array(
         'default'       => t("Default: application/json"),
         'text/json'     => t('text/json'),
-       ),
+      ),
       '#default_value'  => $this->options['content_type'],
       '#description'    => t('The Content-Type header that will be sent with the JSON output.')
     );
@@ -266,7 +266,7 @@ class views_plugin_style_geojson extends views_plugin_style {
   function additional_theme_functions() {
     return array();
   }
-    
+
   /**
    * Implementation of view_style_plugin::render()
    */

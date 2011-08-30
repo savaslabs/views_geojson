@@ -1,13 +1,13 @@
 <?php
 
 /**
- * @file views_geojson.module
+ * @file
  * Provide a GeoJSON Views feed style.
  */
 
 /**
-* Implements hook_views_api().
-*/
+ * Implements hook_views_api().
+ */
 function views_geojson_views_api() {
   return array(
     'api' => '2.0',
@@ -22,9 +22,9 @@ function views_geojson_views_api() {
  * @param $values
  * @return unknown_type
  */
-function _views_geojson_render_multiple_field($field, $values) {  
+function _views_geojson_render_multiple_field($field, $values) {
     $options = $field->options;
-	  // If this is not a grouped field, use content_handler_field::render().
+    // If this is not a grouped field, use content_handler_field::render().
     if (!$field->defer_query) {
       return $field->render($values);
     }
@@ -86,7 +86,7 @@ function _views_geojson_render_multiple_field($field, $values) {
         if (count($rendered) > 1) {
           // TODO: could we use generic field display ?
           //return theme('content_view_multiple_field', $rendered, $content_field, $values);
-        	return $rendered;
+          return $rendered;
         }
         elseif ($rendered) {
           return $rendered[1];
@@ -98,23 +98,22 @@ function _views_geojson_render_multiple_field($field, $values) {
 }
 
 /**
- * Takes each field from a row object and renders the field as determined by the field's theme 
- * 
+ * Takes each field from a row object and renders the field as determined by the field's theme.
+ *
  * @param $view
- * 	 View the row belongs to 
+ *    View the row belongs to
  * @param $row
  *   Row object
  * @return array
- *   Object containing all the raw and rendered fields  
+ *   Object containing all the raw and rendered fields
  */
 function _views_geojson_render_fields($view, $row) {
-
   $excluded_fields = array();
   $feature = array();
   $rendered_record = array();
-  
+
   $data_source = $view->style_plugin->options['data_source'];
-  
+
   $field_ids = array_keys($view->field);
   $rendered_fields = array();
   foreach ($field_ids as $id) {
@@ -146,13 +145,13 @@ function _views_geojson_render_fields($view, $row) {
       $object->id = $id;
       $object->content = $field_output;
       $object->raw = $field_raw;
-      $object->class = drupal_clean_css_identifier(strtolower($id));//views_css_safe($id);
+      $object->class = drupal_clean_css_identifier(drupal_strtolower($id));//views_css_safe($id);
       $object->label = check_plain($view->field[$id]->label());
       $object->is_multiple = $field_is_multiple;
       $rendered_fields[$id] = $object;
     }
   }
-  
+
   // points with Latitude & Longitude
   if (!empty($data_source['value']['other_latlon'])) {
     $lat_field = $rendered_fields[$data_source['other_lat']];
@@ -160,7 +159,7 @@ function _views_geojson_render_fields($view, $row) {
     $lon = floatval($lon_field->raw);
     $lat = floatval($lat_field->raw);
     if (!empty($lat) && !empty($lon)) {
-      $feature['geometry'] = 
+      $feature['geometry'] =
         array(
           'type' => 'Point',
           'coordinates' => array($lon, $lat));
@@ -170,14 +169,14 @@ function _views_geojson_render_fields($view, $row) {
   }
   // Bounding Box
   elseif ($data_source['value']['other_boundingbox']) {
-    list($top_field, $right_field, 
+    list($top_field, $right_field,
         $left_field, $bottom_field) = $this_->get_bounds($fields, $data_source);
     $top =    floatval($row->$top_field);
     $right =  floatval($row->$right_field);
     $left =   floatval($row->$left_field);
     $bottom = floatval($row->$bottom_field);
     if (!empty($top) && !empty($left)) {
-      $feature['geometry'] = 
+      $feature['geometry'] =
         array(
           'type' => 'Polygon',
           'coordinates' => array(
@@ -190,7 +189,7 @@ function _views_geojson_render_fields($view, $row) {
     array_push($excluded_fields, $top_field, $right_field,
       $left_field, $bottom_field);
   }
-  
+
   // Add the name and description attributes
   // as choosen through interface
   $name_field = NULL;
@@ -202,7 +201,7 @@ function _views_geojson_render_fields($view, $row) {
   else {
     $feature['properties']['name'] = '';
   }
-  
+
   $description_field = NULL;
   if ($data_source['description_field']) {
     $description_field = $rendered_fields[$data_source['description_field']]->id;
@@ -212,12 +211,12 @@ function _views_geojson_render_fields($view, $row) {
   else {
     $feature['properties']['description'] = '';
   }
-  
+
   // Only add features with WKT data
   if (empty($feature['geometry'])) {
     return;
   }
-  
+
   // Fill in attributes that are not:
   // - Coordinate/bounding box fields
   // - Name/description (already processed)
@@ -227,11 +226,11 @@ function _views_geojson_render_fields($view, $row) {
     $field_alias = $field->field_alias;
     if (!in_array($field_alias, $excluded_fields, TRUE)) {
       // Use regular field name as this is easier to understand
-      $feature['properties'][$field_alias] = is_numeric($rendered_fields[$name_field]->raw) ? 
+      $feature['properties'][$field_alias] = is_numeric($rendered_fields[$name_field]->raw) ?
         floatval($rendered_fields[$name_field]->raw) :
         $rendered_fields[$name_field]->raw;
-      $feature['properties'][$field_alias . "_rendered"] = is_numeric($rendered_fields[$name_field]->content) ? 
-        floatval($rendered_fields[$name_field]->content) : 
+      $feature['properties'][$field_alias . "_rendered"] = is_numeric($rendered_fields[$name_field]->content) ?
+        floatval($rendered_fields[$name_field]->content) :
         $rendered_fields[$name_field]->content;
     }
   }
@@ -278,7 +277,7 @@ function _views_geojson_encode_formatted($v, $depth = 0) {
                            array('\r', '\n', '\x3c', '\x3e', '\x26'),
                            addslashes($output));
 /* */
-      return '"'. check_plain($output).'"';
+      return '"' . check_plain($output) . '"';
 
     case 'array':
       // Arrays in JSON can't be associative.  If the array is empty or if it
@@ -289,16 +288,16 @@ function _views_geojson_encode_formatted($v, $depth = 0) {
         foreach ($v as $val) {
           $output[] = $indent . $base_indent . _views_geojson_encode_formatted($val, $depth + 1);
         }
-        return '['. (!empty($output) ? $eol . implode(','. $eol, $output) . $eol . $indent : '') .']';
+        return '[' . (!empty($output) ? $eol . implode(',' . $eol, $output) . $eol . $indent : '') . ']';
       }
       // Otherwise, fall through to convert the array as an object.
 
     case 'object':
       $output = array();
       foreach ($v as $key => $val) {
-        $output[] = $indent . $base_indent . _views_geojson_encode_formatted(strval($key)) .' : '. _views_geojson_encode_formatted($val, $depth + 1);
+        $output[] = $indent . $base_indent . _views_geojson_encode_formatted(strval($key)) . ' : ' . _views_geojson_encode_formatted($val, $depth + 1);
       }
-      return '{'. (!empty($output) ? $eol . implode(','. $eol, $output) . $eol . $indent : '') .'}';
+      return '{' . (!empty($output) ? $eol . implode(',' . $eol, $output) . $eol . $indent : '') . '}';
 
     default:
       return 'null';

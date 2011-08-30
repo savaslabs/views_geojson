@@ -1,12 +1,12 @@
 <?php
 
 /**
- * @file views_geojson.views.inc
+ * @file
  * Views plugin definition.
  */
 
 /**
- * Implements hook_views_plugins()
+ * Implements hook_views_plugins().
  * Adds GeoJSON feed style to views UI.
  */
 function views_geojson_views_plugins() {
@@ -18,8 +18,8 @@ function views_geojson_views_plugins() {
         'help'             => t('Displays nodes in the GeoJSON data format.'),
         'handler'          => 'views_plugin_style_geojson',
         'theme'            => 'views_views_geojson_style',
-        'theme path'       => $path .'/views',
-        'path'             => $path .'/views',
+        'theme path'       => $path . '/views',
+        'path'             => $path . '/views',
         'uses row plugin'  => FALSE,
         'uses fields'      => TRUE,
         'uses options'     => TRUE,
