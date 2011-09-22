@@ -26,7 +26,7 @@ if ($view->override_path) {
   print "<code>$json</code>";
 }
 else {
-  $json = json_encode($features_collection);
+  $json = drupal_json_encode($features_collection);
   if ($jsonp_prefix) {
     $json = "$jsonp_prefix($json)";
   }
