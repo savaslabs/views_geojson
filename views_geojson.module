@@ -109,112 +109,100 @@ function _views_geojson_render_multiple_field($field, $values) {
  */
 function _views_geojson_render_fields($view, $row) {
   $excluded_fields = array();
-  $feature = array();
-  $rendered_record = array();
+  $feature         = array();
+  $data_source     = $view->style_plugin->options['data_source'];
+  $field_ids       = array_keys($view->field);
 
-  $data_source = $view->style_plugin->options['data_source'];
+  switch ($data_source['value']) {
+    case 'other_latlon':
+      $options   = array('other_lat', 'other_lon');
+      $other_lat = NULL;
+      $other_lon = NULL;
 
-  $field_ids = array_keys($view->field);
-  $rendered_fields = array();
-  foreach ($field_ids as $id) {
-    $field = $view->field[$id];
-    $field_is_multiple = FALSE;
-    $field_raw = array();
-    if ((isset($field->options['multiple']['group'])) && isset($field->field_values)) {
-      $field_output = _views_json_render_multiple_field($field, $row);
-      $n = 0;
-      if (is_array($field_output)) {
-        foreach ($field->field_values[$row->{$field->field_alias}] as $item) {
-          $field_raw[++$n] = $item["value"];
+      foreach ($view->field as $field_idx => $field) {
+        foreach ($options as $option) {
+          if ($data_source[$option] == $field_idx) {
+            $$option           = $field->advanced_render($row);
+            $excluded_fields[] = $field_idx;
+          }
         }
-        $field_is_multiple = TRUE;
       }
-      else {
-        $field_raw = $view->field[$field->options['id']]->advanced_render($row);
-        $rendered_record[$field->field_alias] = $field_raw;
+
+      if (!empty($other_lat) && !empty($other_lon)) {
+        $feature['geometry'] =
+            array(
+              'type'        => 'Point',
+              'coordinates' => array($other_lon, $other_lat));
       }
-    }
-    else {
-      $field_output = $view->field[$field->options['id']]->advanced_render($row);
-      $field_raw = (isset($view->field[$id]->field_alias) && isset($row->{$view->field[$id]->field_alias})) ? $row->{$view->field[$id]->field_alias} : NULL;
-      $rendered_record[$field->field_alias] = $field_output;
-    }
-
-    if (empty($field->options['exclude']) && !empty($field_output)) {
-      $object = new stdClass();
-      $object->id = $id;
-      $object->content = $field_output;
-      $object->raw = $field_raw;
-      $object->class = drupal_clean_css_identifier(drupal_strtolower($id));//views_css_safe($id);
-      $object->label = check_plain($view->field[$id]->label());
-      $object->is_multiple = $field_is_multiple;
-      $rendered_fields[$id] = $object;
-    }
-  }
-
-  // points with Latitude & Longitude
-  if (!empty($data_source['value']['other_latlon'])) {
-    $lat_field = $rendered_fields[$data_source['other_lat']];
-    $lon_field = $rendered_fields[$data_source['other_lon']];
-    $lon = floatval($lon_field->raw);
-    $lat = floatval($lat_field->raw);
-    if (!empty($lat) && !empty($lon)) {
-      $feature['geometry'] =
-        array(
-          'type' => 'Point',
-          'coordinates' => array($lon, $lat));
-    }
-    $excluded_fields[] = $lat_field;
-    $excluded_fields[] = $lon_field;
-  }
-  // Bounding Box
-  elseif ($data_source['value']['other_boundingbox']) {
-    list($top_field, $right_field,
-        $left_field, $bottom_field) = $this_->get_bounds($fields, $data_source);
-    $top =    floatval($row->$top_field);
-    $right =  floatval($row->$right_field);
-    $left =   floatval($row->$left_field);
-    $bottom = floatval($row->$bottom_field);
-    if (!empty($top) && !empty($left)) {
-      $feature['geometry'] =
-        array(
-          'type' => 'Polygon',
-          'coordinates' => array(
-            array($left, $top),
-            array($right, $top),
-            array($right, $bottom),
-            array($left, $bottom))
-          );
-    }
-    array_push($excluded_fields, $top_field, $right_field,
-      $left_field, $bottom_field);
-  }
-
-  // Add the name and description attributes
-  // as choosen through interface
-  $name_field = NULL;
-  if ($data_source['name_field']) {
-    $name_field = $rendered_fields[$data_source['name_field']]->id;
-    $feature['properties']['name'] = $rendered_fields[$name_field]->content;
-    $excluded_fields[] = $name_field;
-  }
-  else {
-    $feature['properties']['name'] = '';
-  }
-
-  $description_field = NULL;
-  if ($data_source['description_field']) {
-    $description_field = $rendered_fields[$data_source['description_field']]->id;
-    $feature['properties']['description'] = $rendered_fields[$description_field]->content;
-    $excluded_fields[] = $description_field;
-  }
-  else {
-    $feature['properties']['description'] = '';
+      break;
+    case 'other_boundingbox':
+      list($top_field, $right_field,
+          $left_field, $bottom_field) = $this_->get_bounds($fields, $data_source);
+      $top    = floatval($row->$top_field);
+      $right  = floatval($row->$right_field);
+      $left   = floatval($row->$left_field);
+      $bottom = floatval($row->$bottom_field);
+      if (!empty($top) && !empty($left)) {
+        $feature['geometry'] =
+            array(
+              'type'        => 'Polygon',
+              'coordinates' => array(
+                array($left, $top),
+                array($right, $top),
+                array($right, $bottom),
+                array($left, $bottom))
+            );
+      }
+      array_push($excluded_fields, $top_field, $right_field,
+        $left_field, $bottom_field);
+      break;
   }
 
   // Only add features with WKT data
   if (empty($feature['geometry'])) {
     return;
+  }
+
+  // Add the name and description attributes
+  // as choosen through interface
+  if ($data_source['name_field']) {
+    $options    = array('name_field');
+    $name_field = NULL;
+
+    foreach ($view->field as $field_idx => $field) {
+      foreach ($options as $option) {
+        if ($data_source[$option] == $field_idx) {
+          $$option           = $field->advanced_render($row);
+          $excluded_fields[] = $field_idx;
+        }
+      }
+    }
+    $feature['properties']['name'] = $name_field;
+  }
+  else {
+    $feature['properties']['name'] = '';
+  }
+
+  if ($data_source['description_field']) {
+    $options           = array('description_field');
+    $description_field = NULL;
+
+    foreach ($view->field as $field_idx => $field) {
+      foreach ($options as $option) {
+        if ($data_source[$option] == $field_idx) {
+          $$option           = $field->advanced_render($row);
+          $excluded_fields[] = $field_idx;
+        }
+        if ($data_source[$option] === '#node') {
+          $view_mode = $data_source['view_mode'] ? $data_source['view_mode'] : 'full';
+          $$option   = drupal_render(node_view(node_load($row->nid), $view_mode));
+        }
+      }
+    }
+    $feature['properties']['description'] = $description_field;
+  }
+  else {
+    $feature['properties']['description'] = '';
   }
 
   // Fill in attributes that are not:
@@ -223,15 +211,11 @@ function _views_geojson_render_fields($view, $row) {
   // - Views "excluded" fields
   foreach ($field_ids as $id) {
     $field = $view->field[$id];
-    $field_alias = $field->field_alias;
-    if (!in_array($field_alias, $excluded_fields, TRUE)) {
-      // Use regular field name as this is easier to understand
-      $feature['properties'][$field_alias] = is_numeric($rendered_fields[$name_field]->raw) ?
-        floatval($rendered_fields[$name_field]->raw) :
-        $rendered_fields[$name_field]->raw;
-      $feature['properties'][$field_alias . "_rendered"] = is_numeric($rendered_fields[$name_field]->content) ?
-        floatval($rendered_fields[$name_field]->content) :
-        $rendered_fields[$name_field]->content;
+    if (!in_array($id, $excluded_fields, TRUE)) {
+      $value                                              = $row->{$view->field[$id]->field_alias};
+      $value_rendered                                     = $field->advanced_render($row);
+      $feature['properties'][$id]                         = is_numeric($value) ? floatval($value) : $value;
+      $feature['properties'][$id . "_rendered"] = is_numeric($value_rendered) ? floatval($value_rendered) : $value_rendered;
     }
   }
 

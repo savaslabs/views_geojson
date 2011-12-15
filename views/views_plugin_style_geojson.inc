@@ -92,7 +92,7 @@ class views_plugin_style_geojson extends views_plugin_style {
     );
     $form['data_source']['value'] = array(
       '#type' => 'select',
-      '#multiple' => TRUE,
+      '#multiple' => FALSE,
       '#title' => t('Map Data Sources'),
       '#description' => t('Choose which sources of data that the map will provide features for.'),
       '#options' => $data_source_options,
