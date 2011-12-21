@@ -6,4 +6,5 @@ core = "7.x"
 
 files[] = views/views_plugin_style_geojson.inc
 
-dependencies[] = views
+dependencies[] = views (>=3.0)
+dependencies[] = libraries

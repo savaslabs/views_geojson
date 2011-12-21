@@ -21,16 +21,21 @@ Content is output as GeoJSON "Point" features; each row a point including geospa
 REQUIREMENTS
 ------------
 
+Drupal modules:
 * Views - http://drupal.org/project/views
+* Libraries - http://drupal.org/project/libraries
 
+3rd-party libraries:
+* GeoPHP - https://github.com/phayes/geoPHP
 
 INSTALLATION
 ------------
 
-Install as usual.
+Install the module as usual. See http://drupal.org/documentation/install/modules-themes/modules-7 for help.
 
-See http://drupal.org/documentation/install/modules-themes/modules-7 for help.
-
+Views GeoJSON depends on the geoPHP library for converting WKT format data.
+Download geoPHP from https://github.com/downloads/phayes/geoPHP/geoPHP.tar.gz
+and unpack it into your sites/all/libraries directory.
 
 USAGE
 -----
@@ -40,17 +45,17 @@ USAGE
 3. Optionally add fields for name and description.
 4. Set Format for the display to "GeoJSON Feed".
 5. In the "Style options" for this format:
-   * Choose Map Data Source (Set to Other: Lat/Lon Point.)
-   * Assign the fields that represent Latitude and Longitude.
-   * Optionally choose fields representing name and description for each point.
-   * Optionally set a JSONP prefix, (see http://en.wikipedia.org/wiki/JSONP).
-   * Set the Content-type header to be sent. The default is "application/json",
-     the standard MIME type for JSON, per http://www.ietf.org/rfc/rfc4627.txt.
-   * Optionally enable "Views API mode". By default the plugins stop Drupal from
-     doing any additional processing when a view is rendered, allowing the
-     content to be output without normal page markup. If you are calling a view
-     programatically, enable "Views API mode" to avoid early termination of
-     Drupal execution.
+  * Choose Map Data Source (Set to Other: Lat/Lon Point.)
+  * Assign the fields that represent Latitude and Longitude.
+  * Optionally choose fields representing name and description for each point.
+  * Optionally set a JSONP prefix, (see http://en.wikipedia.org/wiki/JSONP).
+  * Set the Content-type header to be sent. The default is "application/json",
+    the standard MIME type for JSON, per http://www.ietf.org/rfc/rfc4627.txt.
+  * Optionally enable "Views API mode". By default the plugins stop Drupal from
+    doing any additional processing when a view is rendered, allowing the
+    content to be output without normal page markup. If you are calling a view
+    programatically, enable "Views API mode" to avoid early termination of
+    Drupal execution.
 
 
 TO DO

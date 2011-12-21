@@ -19,13 +19,13 @@ class views_plugin_style_geojson extends views_plugin_style {
     $options['data_source'] = array(
       'contains' => array(
         'value' => array('default' => 'asc'),
-        'other_lat' => array('default' => 0),
-        'other_lon' => array('default' => 0),
+        'latitude' => array('default' => 0),
+        'longitude' => array('default' => 0),
         'openlayers_wkt' => array('default' => 0),
-        'other_top' => array('default' => 0),
-        'other_right' => array('default' => 0),
-        'other_bottom' => array('default' => 0),
-        'other_left' => array('default' => 0),
+        'bbox_top' => array('default' => 0),
+        'bbox_right' => array('default' => 0),
+        'bbox_bottom' => array('default' => 0),
+        'bbox_left' => array('default' => 0),
         'name_field' => array('default' => 0),
         'description_field' => array('default' => 0),
       ),
@@ -63,23 +63,16 @@ class views_plugin_style_geojson extends views_plugin_style {
 
     // Go through fields
     foreach ($handlers as $field_id => $handler) {
-        if ($handler->content_field['type'] == 'openlayers_wkt' &&
-          $handler->options['format'] !== 'openlayers_wkt'
-        ) {
-          form_set_error('', t('WKT Field %field not available
-            because it is formatted as a map. Set its format to WKT Value to
-            make it available.', array('%field' => $handler->definition['title'])));
-        }
-        else {
-          $fields[$field_id] = $handler->definition['title'];
-        }
+      $fields[$field_id] = $handler->definition['title'];
+      $fields_info[$field_id]['type'] = $handler->field_info['type'];
     }
 
     // Default data source
     $data_source_options = array(
-      'other_latlon' => t('Other: Lat/Lon Point'),
-      'other_boundingbox' => t('Other: Bounding Box'),
-      'openlayers_wkt' => t('OpenLayers WKT')
+      'latlon' => t('Other: Lat/Lon Point'),
+      'boundingbox' => t('Other: Bounding Box'),
+      'geofield' => t('Geofield'),
+      'wkt' => t('WKT'),
     );
 
     // Data Source options
@@ -100,72 +93,91 @@ class views_plugin_style_geojson extends views_plugin_style {
     );
     // Other Lat and Lon data sources
     if (count($fields > 0)) {
-      $form['data_source']['other_lat'] = array(
+      $form['data_source']['latitude'] = array(
         '#type' => 'select',
         '#title' => t('Latitude Field'),
         '#description' => t('Choose a field for Latitude.  This should be a field that is a decimal or float value.'),
         '#options' => $fields,
-        '#default_value' => $this->options['data_source']['other_lat'],
+        '#default_value' => $this->options['data_source']['latitude'],
         '#process' => array('ctools_dependent_process'),
-        '#dependency' => array('edit-style-options-data-source-value' => array('other_latlon')),
+        '#dependency' => array('edit-style-options-data-source-value' => array('latlon')),
       );
-      $form['data_source']['other_lon'] = array(
+      $form['data_source']['longitude'] = array(
         '#type' => 'select',
         '#title' => t('Longitude Field'),
         '#description' => t('Choose a field for Longitude.  This should be a field that is a decimal or float value.'),
         '#options' => $fields,
-        '#default_value' => $this->options['data_source']['other_lon'],
+        '#default_value' => $this->options['data_source']['longitude'],
         '#process' => array('ctools_dependent_process'),
-        '#dependency' => array('edit-style-options-data-source-value' => array('other_latlon')),
+        '#dependency' => array('edit-style-options-data-source-value' => array('latlon')),
       );
 
-      // Other: WKT
-      $form['data_source']['openlayers_wkt'] = array(
+      // Get Geofield-type fields
+      $geofield_fields = array();
+      foreach ($fields as $field_id => $field) {
+        if ($fields_info[$field_id]['type'] == 'geofield') {
+          $geofield_fields[$field_id] = $field;
+        }
+      }
+
+      // Geofield
+      $form['data_source']['geofield'] = array(
         '#type' => 'select',
-        '#title' => t('WKT Field'),
-        '#description' => t('Choose the OpenLayers WKT field.'),
-        '#options' => $fields,
-        '#default_value' => $this->options['data_source']['openlayers_wkt'],
+        '#title' => t('Geofield'),
+        '#description' => t('Choose a Geofield field. Any formatter will do; we\'ll access Geofield\'s underlying WKT format.'),
+        '#options' => $geofield_fields,
+        '#default_value' => $this->options['data_source']['geofield'],
         '#process' => array('ctools_dependent_process'),
-        '#dependency' => array('edit-style-options-data-source-value' => array('openlayers_wkt')),
+        '#dependency' => array('edit-style-options-data-source-value' => array('geofield')),
+      );
+
+      // WKT
+      $form['data_source']['wkt'] = array(
+        '#type' => 'select',
+        '#title' => t('WKT'),
+        '#description' => t('Choose a WKT format field.'),
+        '#options' => $fields,
+        '#default_value' => $this->options['data_source']['wkt'],
+        '#process' => array('ctools_dependent_process'),
+        '#dependency' => array('edit-style-options-data-source-value' => array('wkt')),
       );
 
       // Other: Bounding Box
-      $form['data_source']['other_top'] = array(
+      $form['data_source']['bbox_top'] = array(
         '#type' => 'select',
         '#title' => t('Top Field'),
         '#description' => t('Choose a field for Top.  This should be a field that is a decimal or float value.'),
         '#options' => $fields,
-        '#default_value' => $this->options['data_source']['other_top'],
+        '#default_value' => $this->options['data_source']['bbox_top'],
         '#process' => array('ctools_dependent_process'),
-        '#dependency' => array('edit-style-options-data-source-value' => array('other_boundingbox')),
+        '#dependency' => array('edit-style-options-data-source-value' => array('boundingbox')),
       );
-      $form['data_source']['other_right'] = array(
+      $form['data_source']['bbox_right'] = array(
         '#type' => 'select',
         '#title' => t('Right Field'),
         '#description' => t('Choose a field for Right.  This should be a field that is a decimal or float value.'),
         '#options' => $fields,
-        '#default_value' => $this->options['data_source']['other_right'],
+        '#default_value' => $this->options['data_source']['bbox_right'],
         '#process' => array('ctools_dependent_process'),
-        '#dependency' => array('edit-style-options-data-source-value' => array('other_boundingbox')),
+        '#dependency' => array('edit-style-options-data-source-value' => array('boundingbox')),
       );
-      $form['data_source']['other_bottom'] = array(
+      $form['data_source']['bbox_bottom'] = array(
         '#type' => 'select',
         '#title' => t('Bottom Field'),
         '#description' => t('Choose a field for Bottom.  This should be a field that is a decimal or float value.'),
         '#options' => $fields,
-        '#default_value' => $this->options['data_source']['other_bottom'],
+        '#default_value' => $this->options['data_source']['bbox_bottom'],
         '#process' => array('ctools_dependent_process'),
-        '#dependency' => array('edit-style-options-data-source-value' => array('other_boundingbox')),
+        '#dependency' => array('edit-style-options-data-source-value' => array('boundingbox')),
       );
-      $form['data_source']['other_left'] = array(
+      $form['data_source']['bbox_left'] = array(
         '#type' => 'select',
         '#title' => t('Left Field'),
         '#description' => t('Choose a field for Left.  This should be a field that is a decimal or float value.'),
         '#options' => $fields,
-        '#default_value' => $this->options['data_source']['other_left'],
+        '#default_value' => $this->options['data_source']['bbox_left'],
         '#process' => array('ctools_dependent_process'),
-        '#dependency' => array('edit-style-options-data-source-value' => array('other_boundingbox')),
+        '#dependency' => array('edit-style-options-data-source-value' => array('boundingbox')),
       );
     }
     $form['data_source']['name_field'] = array(
@@ -243,10 +255,10 @@ class views_plugin_style_geojson extends views_plugin_style {
 
   function get_bounds($fields, $data_source) {
     return array(
-      $fields[$data_source['other_top']]['field_alias'],
-      $fields[$data_source['other_right']]['field_alias'],
-      $fields[$data_source['other_left']]['field_alias'],
-      $fields[$data_source['other_bottom']]['field_alias'],
+      $fields[$data_source['bbox_top']]['field_alias'],
+      $fields[$data_source['bbox_right']]['field_alias'],
+      $fields[$data_source['bbox_left']]['field_alias'],
+      $fields[$data_source['bbox_bottom']]['field_alias'],
     );
   }
 
@@ -279,7 +291,7 @@ class views_plugin_style_geojson extends views_plugin_style {
     $features = array();
     foreach ($view->result as $count => $row) {
       $view->row_index = $count;
-      $features[] = _views_geojson_render_fields($view, $row);
+      $features[] = _views_geojson_render_fields($view, $row, $count);
     }
     unset($view->row_index);
 
