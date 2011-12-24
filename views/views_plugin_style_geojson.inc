@@ -183,40 +183,39 @@ class views_plugin_style_geojson extends views_plugin_style {
     $form['data_source']['name_field'] = array(
         '#type' => 'select',
         '#title' => t('Title Field'),
-        '#description' => t('Choose the field which will appear as a title on tooltips.'),
+        '#description' => t('Choose the field to appear as title on tooltips.'),
         '#options' => array_merge(array('' => ''), $fields),
         '#default_value' => $this->options['data_source']['name_field'],
     );
 
-    // For node content type, we can render the node as with a specific
-    // view mode.
+    // For node content, we can render the node using a specific view mode.
     if ($this->view->base_table == 'node') {
       $form['data_source']['description_field'] = array(
         '#type'           => 'select',
-        '#title'          => t('Description Content'),
-        '#description'    => t('Choose the field or rendering method which will
-            appear as a description on tooltips or popups.'),
+        '#title'          => t('Description'),
+        '#description'    => t('Choose the field or rendering method to appear as
+          description on tooltips.'),
         '#required'       => FALSE,
         '#options'        => array_merge(array(
           ''                => '',
-          '#node'           => '<' . t('entire node') . '>'
+          '#node'           => '<' . t('Entire node') . '>'
         ), $fields),
         '#default_value'  => $this->options['data_source']['description_field'],
       );
 
-      // Available_view_modes is the array to contain the avaible
-      // view modes, for now this is not content type aware, but should be
+      // Available view modes. @TODO: Make this Content Type aware.
       $available_view_modes = array();
-      $entity_info          = entity_get_info();
+      $entity_info = entity_get_info();
       // Get the machine names of the view modes
       $view_modes_machine_names[] = array_keys($entity_info['node']['view modes']);
       // Get the labels (human readable) of the view modes
       foreach ($entity_info['node']['view modes'] as $key => $view_mode) {
         $view_modes_labels[] = $view_mode[label];
       }
-      // Combine the machine view mode name with the label, this could sure be done much better?
+      // Combine the view mode machine name with its label.
+      // @TODO: Could this be done better?
       $entities_to_display = array_combine($view_modes_machine_names[0], $view_modes_labels);
-      //output the form
+      // Output the form
       $form['data_source']['view_mode'] = array(
         '#type'          => 'select',
         '#title'         => t('View mode'),
