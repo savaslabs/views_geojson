@@ -357,7 +357,7 @@ function _views_geojson_load_geophp() {
 function views_geojson_requirements($phase) {
   $requirements = array();
 
-  $geophp = views_geojson_load_geophp();
+  $geophp = _views_geojson_load_geophp();
 
   $geophp_download_link = l('https://github.com/downloads/phayes/geoPHP/geoPHP.tar.gz', 'https://github.com/downloads/phayes/geoPHP/geoPHP.tar.gz');
 
