@@ -7,7 +7,8 @@
 
 /**
  * Implements hook_views_plugins().
- * Adds GeoJSON feed style to views UI.
+ *
+ * Adds GeoJSON feed style.
  */
 function views_geojson_views_plugins() {
   $path = drupal_get_path('module', 'views_geojson');
@@ -30,5 +31,50 @@ function views_geojson_views_plugins() {
         'even empty'     => TRUE,
       ),
     ),
+    'argument default' => array(
+      'querystring' => array(
+        'title' => t('Bounding box from query string'),
+        'handler' => 'views_plugin_argument_default_bboxquery',
+      ),
+    ),
   );
+}
+
+/**
+ * Implements hook_views_handlers().
+ *
+ * Adds bounding box contextual filter.
+ */
+function views_geojson_views_handlers() {
+  return array(
+    'info' => array(
+      'path' => drupal_get_path('module', 'views_geojson') . '/views', // path to view files
+    ),
+    'handlers' => array(
+      'views_geojson_bbox_argument' => array(
+        'parent' => 'views_handler_argument',
+      )
+    ),
+  );
+}
+
+/**
+ * Implements hook_views_data().
+ *
+ * Adds bounding box contextual filter.
+ */
+function views_geojson_views_data() {
+  $data = array();
+
+  $data['node']['bbox_argument'] = array(
+    'group' => t('Custom'),
+    'real field'  => 'bbox_argument',
+    'title' => t('Bounding box'),
+    'help' => t('Filter locations within a bounding box.'),
+    'argument' => array(
+      'handler' => 'views_geojson_bbox_argument'
+    ),
+  );
+
+  return $data;
 }
