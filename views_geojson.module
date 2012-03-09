@@ -164,6 +164,7 @@ function _views_geojson_render_fields($view, $row, $index) {
           if ($data_source[$option] == $field_idx) {
             $$option = $view->style_plugin->get_field_value($view->row_index, $field_idx);
             $$option = ${$option}[0]['wkt'];
+            $view->row_index = $index;
             $excluded_fields[] = $field_idx;
           }
         }
