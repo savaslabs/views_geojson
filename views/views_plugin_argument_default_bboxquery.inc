@@ -18,6 +18,11 @@ class views_plugin_argument_default_bboxquery extends views_plugin_argument_defa
   function options_form(&$form, &$form_state) {
     parent::options_form($form, $form_state);
 
+    $form['info'] = array(
+      '#markup' => '<p class="description">Attempt to pull bounding box info
+      directly from the query string, bypassing Drupal\'s normal argument
+      handling. If the argument does not exist, all values will be shown.</p>',
+    );
     $form['arg_id'] = array(
       '#type' => 'textfield',
       '#title'  => t('Query argument ID'),
