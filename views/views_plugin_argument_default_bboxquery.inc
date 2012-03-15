@@ -34,6 +34,8 @@ class views_plugin_argument_default_bboxquery extends views_plugin_argument_defa
   function get_argument() {
     if (isset($_GET[$this->options['arg_id']])) {
       return $_GET[$this->options['arg_id']];
+    } else {
+      return TRUE; // Return all values if arg not present
     }
   }
 }
