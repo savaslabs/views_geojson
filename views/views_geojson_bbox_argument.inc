@@ -15,7 +15,7 @@ class views_geojson_bbox_argument extends views_handler_argument {
    */
   function option_definition() {
     $options = parent::option_definition();
-    $options['arg_id'] = array('default' => 'BBOX');
+    $options['arg_id'] = array('default' => 'bbox');
     return $options;
   }
 
@@ -53,7 +53,7 @@ class views_geojson_bbox_argument extends views_handler_argument {
   /*
    * Pull BBOX string from URL to get coordinates
    *
-   * ?BBOX=x,x,x,x
+   * ?bbox=x,x,x,x
    */
   function _get_bbox_coords() {
     if (isset($_GET[$this->options['arg_id']])) {
@@ -66,7 +66,7 @@ class views_geojson_bbox_argument extends views_handler_argument {
    * Split BBOX string into {left, bottom, right, top}
    */
   function _explode_bbox_coords($bbox_coords_str) {
-    // If the GET prefix is still in there (like "?BBOX="), remove it.
+    // If the GET prefix is still in there (like "?bbox="), remove it.
     // @TODO: this might just handle what we've broken into a special case as
     // the "query string" default arg
     $arg_get_prefix = '?' . $this->options['arg_id'] . '=';
