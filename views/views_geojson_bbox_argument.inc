@@ -74,12 +74,27 @@ class views_geojson_bbox_argument extends views_handler_argument {
 
     $bbox_coords = explode(',', $bbox_coords_str);
     if (count($bbox_coords) == 4) {
-      return array(
+      $bbox = array(
         'left' => $bbox_coords[0],
         'bottom' => $bbox_coords[1],
         'right' => $bbox_coords[2],
         'top' => $bbox_coords[3],
       );
+      _unwrap_bbox_coords($bbox);
+    }
+  }
+
+  /*
+   * OpenLayers' bounding box query can use longitudes that are over 180.
+   * We make these into saner numbers.
+   */
+  function _unwrap_bbox_coords($bbox) {
+    foreach ($bbox_coords as $key => $value) {
+      $value_sign = ($value > 0) ? 1 : (($value < 0) ? -1 : 0);
+      while (abs($value) > 180) {
+        $value -= ($value_sign * 180);
+      }
+      $bbox_coords[$key] = $value;
     }
   }
 
