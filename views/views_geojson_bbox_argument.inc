@@ -59,7 +59,7 @@ class views_geojson_bbox_argument extends views_handler_argument {
     if (isset($_GET[$this->options['arg_id']])) {
       $this->argument = $_GET[$this->options['arg_id']];
     }
-    return _explode_bbox_coords($this->argument);
+    return $this->_explode_bbox_coords($this->argument);
   }
 
   /*
@@ -80,21 +80,7 @@ class views_geojson_bbox_argument extends views_handler_argument {
         'right' => $bbox_coords[2],
         'top' => $bbox_coords[3],
       );
-      _unwrap_bbox_coords($bbox);
-    }
-  }
-
-  /*
-   * OpenLayers' bounding box query can use longitudes that are over 180.
-   * We make these into saner numbers.
-   */
-  function _unwrap_bbox_coords($bbox) {
-    foreach ($bbox_coords as $key => $value) {
-      $value_sign = ($value > 0) ? 1 : (($value < 0) ? -1 : 0);
-      while (abs($value) > 180) {
-        $value -= ($value_sign * 180);
-      }
-      $bbox_coords[$key] = $value;
+      return $bbox;
     }
   }
 
@@ -103,11 +89,10 @@ class views_geojson_bbox_argument extends views_handler_argument {
    */
   function query() {
     $this->ensure_my_table();
-
     if (!empty($this->argument)) {
       $bbox = $this->_explode_bbox_coords($this->argument);
     } else {
-      $bbox = _get_bbox_coords();
+      $bbox = $this->_get_bbox_coords();
     }
 
     // If bbox not set properly, don't edit the query.
@@ -119,22 +104,29 @@ class views_geojson_bbox_argument extends views_handler_argument {
       return;
     }
 
-    $data_source = $this->view->display_handler->display->display_options['style_options']['data_source'];
+    if (isset($this->view->display_handler->display->display_options['style_options'])) {
+      $data_source = $this->view->display_handler->display->display_options['style_options']['data_source'];
+    }
+    else {
+      $data_source = $this->view->display['default']->display_options['style_options']['data_source'];
+    }
 
     // We handle latlon and geofield data_source types.
     // No support yet for WKT.
-
     if ($data_source['value'] == 'latlon') {
       $lat_field_obj = $this->view->field[$data_source['latitude']];
       $lon_field_obj = $this->view->field[$data_source['longitude']];
       $lat_field_table = $lat_field_obj->table;
       $lon_field_table = $lon_field_obj->table;
-    } elseif ($data_source['value'] == 'geofield') {
+    }
+    elseif ($data_source['value'] == 'geofield') {
       // Geofield includes both Lat and Lon fields.
       // We pretend they're distinct fields so we can use same code as for
       // latlon, since we're just going to get lat & lon from geofield anyway.
       $lat_field_obj = $lon_field_obj = $this->view->field[$data_source['geofield']];
       $lat_field_table = $lon_field_table = $lat_field_obj->table;
+    } else {
+      return;
     }
 
     // If the Latitude / Longitude fields are really geofields,
@@ -157,10 +149,33 @@ class views_geojson_bbox_argument extends views_handler_argument {
       $this->query->add_table($lon_field_table);
     }
 
-    // Add WHERE to query.
-    $this->query->add_where(0, "$lat_field_table.$lat_field_name", $bbox['left'], '>=');
-    $this->query->add_where(0, "$lon_field_table.$lon_field_name", $bbox['bottom'], '<=');
-    $this->query->add_where(0, "$lat_field_table.$lat_field_name", $bbox['right'], '<=');
-    $this->query->add_where(0, "$lon_field_table.$lon_field_name", $bbox['top'], '>=');
+    // Add WHERE(s) to query.
+    $left = intval($bbox['left']);
+    $right = intval($bbox['right']);
+    // OpenLayers' longitude bbox values can be >180 or <-180 when the map wraps around.
+    // We need to turn these into BETWEENs with OR.
+    if ($right - $left < 360) {
+      $group = $this->query->set_where_group('AND');
+      if ($left > -180) {
+        $this->query->add_where($group, "$lon_field_table.$lon_field_name", $left, '>=');
+      } else {
+        $this->query->set_where_group('OR', $group);
+        $left = -1 * ($left % 180);
+        $this->query->add_where($group, "$lon_field_table.$lon_field_name", array($left, 0), 'BETWEEN');
+      }
+      if ($right < 180) {
+        $this->query->add_where($group, "$lon_field_table.$lon_field_name", $right, '<=');
+      } else {
+        $this->query->set_where_group('OR', $group);
+        $right = -1 * ($right % 180);
+        $this->query->add_where($group, "$lon_field_table.$lon_field_name", array($right, 0), 'BETWEEN');
+      }
+    }
+
+    $bottom = intval($bbox['bottom']);
+    $top = intval($bbox['top']);
+    $group = $this->query->set_where_group('AND');
+    $this->query->add_where($group, "$lat_field_table.$lat_field_name", $bottom, '>=');
+    $this->query->add_where($group, "$lat_field_table.$lat_field_name", $top, '<=');
   }
 }
