@@ -109,7 +109,7 @@ function _views_geojson_render_multiple_field($field, $values) {
  */
 function _views_geojson_render_fields($view, $row, $index) {
   $excluded_fields = array();
-  $feature         = array('type' => 'Geometry');
+  $feature         = array('type' => 'Feature');
   $data_source     = $view->style_plugin->options['data_source'];
   $field_ids       = array_keys($view->field);
 
