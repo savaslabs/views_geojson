@@ -71,6 +71,10 @@ with any mapping tool that requests bounding box coordinates as
 "?BBOX=left,bottom,right,top" in the query string. Argument ID "BBOX" is
 default for OpenLayers but can be changed.
 
+OpenLayers 7.x-2.x-dev is currently required for OpenLayers BBOX integration.
+See OpenLayers issue http://drupal.org/node/1493344, "Support BBOX strategy in
+the GeoJSON layer type".
+
 1. Create a GeoJSON view as above in USAGE.
 2. Add a layer to OpenLayers of type GeoJSON, at
    admin/structure/openlayers/layers/add/openlayers_layer_type_geojson,
