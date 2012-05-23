@@ -170,7 +170,7 @@ function _views_geojson_render_fields($view, $row, $index) {
         }
       }
       if (!empty($geofield)) {
-        _views_geojson_load_geophp();
+        geophp_load();
         $json = geoPHP::load($geofield, 'wkt');
         if (is_object($json)) {
           $feature['geometry'] = json_decode($json->out('json'));
@@ -190,7 +190,7 @@ function _views_geojson_render_fields($view, $row, $index) {
       }
 
       if (!empty($wkt)) {
-        _views_geojson_load_geophp();
+        geophp_load();
         $json = geoPHP::load($wkt, 'wkt');
         if (is_object($json)) {
           $feature['geometry'] = json_decode($json->out('json'));
@@ -327,77 +327,4 @@ function _views_geojson_encode_formatted($v, $depth = 0) {
     default:
       return 'null';
   }
-}
-
-/**
- * Loads the geoPHP library.
- *
- * @return
- *   Returns the filename of the included geoPHP library when successful, FALSE
- *   otherwise.
- */
-function _views_geojson_load_geophp() {
-  static $static_cache = FALSE;
-
-  if (!$static_cache) {
-    $path = libraries_get_path('geoPHP');
-    $file = $path . '/geoPHP.inc';
-    if (file_exists($file)) {
-      if (include_once($file)) {
-        $static_cache = $file;
-      }
-    }
-  }
-
-  return $static_cache;
-}
-
-/**
- * Implements hook_requirements().
- */
-function views_geojson_requirements($phase) {
-  $requirements = array();
-
-  $geophp = _views_geojson_load_geophp();
-
-  $geophp_download_link = l('https://github.com/downloads/phayes/geoPHP/geoPHP.tar.gz', 'https://github.com/downloads/phayes/geoPHP/geoPHP.tar.gz');
-
-  // Report geoPHP library status
-  if ($geophp) {
-    try {
-      $geophp_version = geoPHP::version();
-    }
-    catch (Exception $e) {
-      $geophp_version = 0;
-    }
-    if ($geophp_version >= 0.4) {
-      $requirements['views_geojson_geophp'] = array(
-        'title' => t('GeoPHP library installed (Views GeoJSON)'),
-        'severity' => REQUIREMENT_OK,
-        'value' => t('GeoPHP library (version %version) installed at %path.', array('%path' => $geophp, '%version' => $geophp_version)),
-      );
-    }
-    elseif ($geophp_version >= 0.3) {
-      $requirements['views_geojson_geophp'] = array(
-        'title' => t('Old geoPHP library (Views GeoJSON)'),
-        'severity' => REQUIREMENT_INFO,
-        'value' => t('GeoPHP library (version %version) found. Version %version is compatible with Views GeoJSON, but is not current and might lead to problems. Please download the newest version of geoPHP from !link and unpack it into your libraries directory.', array('!link' => $geophp_download_link, '%version' => $geophp_version)),
-      );
-    }
-    else {
-      $requirements['views_geojson_geophp'] = array(
-        'title' => t('Incompatible geoPHP library (Views GeoJSON)'),
-        'severity' => REQUIREMENT_ERROR,
-        'value' => t('GeoPHP library version %version is outdated and incompatible with Views GeoJSON. Please download the latest geoPHP from !link and unpack it into your libraries directory.', array('!link' => $geophp_download_link, '%version' => $geophp_version)),
-      );
-    }
-  }
-  else {
-    $requirements['views_geojson_geophp'] = array(
-      'title' => t('GeoPHP library not found (Views GeoJSON)'),
-      'severity' => REQUIREMENT_ERROR,
-      'value' => t('GeoPHP library not found. Views GeoJSON requires it. Please download it from !link and unpack it into your libraries directory.', array('!link' => $geophp_download_link)),
-    );
-  }
-  return $requirements;
 }

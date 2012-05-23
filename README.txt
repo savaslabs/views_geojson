@@ -24,10 +24,7 @@ REQUIREMENTS
 
 Drupal modules:
 * Views - http://drupal.org/project/views
-* Libraries - http://drupal.org/project/libraries
-
-3rd-party libraries:
-* GeoPHP - https://github.com/phayes/geoPHP
+* geoPHP - http://drupal.org/project/geophp
 
 
 INSTALLATION
@@ -35,10 +32,6 @@ INSTALLATION
 
 Install the module as usual. See
 http://drupal.org/documentation/install/modules-themes/modules-7 for help.
-
-Views GeoJSON depends on the geoPHP library for converting WKT format data.
-Download geoPHP from https://github.com/downloads/phayes/geoPHP/geoPHP.tar.gz
-and unpack it into your sites/all/libraries directory.
 
 
 USAGE
