@@ -118,7 +118,6 @@ function _views_geojson_render_fields($view, $row, $index) {
       $options   = array('latitude', 'longitude');
       $latitude = NULL;
       $longitude = NULL;
-
       foreach ($view->field as $field_idx => $field) {
         foreach ($options as $option) {
           if ($data_source[$option] == $field_idx) {
@@ -127,14 +126,13 @@ function _views_geojson_render_fields($view, $row, $index) {
           }
         }
       }
-
       if (!empty($latitude) && !empty($longitude)) {
-        $feature['geometry'] =
-            array(
-              'type'        => 'Point',
-              'coordinates' => array(floatval($longitude), floatval($latitude)));
+        $feature['geometry'] = array(
+          'type'        => 'Point',
+          'coordinates' => array(floatval($longitude), floatval($latitude)));
       }
       break;
+
     case 'boundingbox':
       list($top_field, $right_field,
           $left_field, $bottom_field) = $this_->get_bounds($fields, $data_source);
@@ -143,30 +141,26 @@ function _views_geojson_render_fields($view, $row, $index) {
       $left   = floatval($row->$left_field);
       $bottom = floatval($row->$bottom_field);
       if (!empty($top) && !empty($left)) {
-        $feature['geometry'] =
-            array(
-              'type'        => 'Polygon',
-              'coordinates' => array(
-                array($left, $top),
-                array($right, $top),
-                array($right, $bottom),
-                array($left, $bottom))
-            );
+        $feature['geometry'] = array(
+          'type'        => 'Polygon',
+          'coordinates' => array(
+            array($left, $top),
+            array($right, $top),
+            array($right, $bottom),
+            array($left, $bottom))
+        );
       }
       array_push($excluded_fields, $top_field, $right_field,
         $left_field, $bottom_field);
       break;
-    case 'geofield':
-      $options = array('geofield');
 
+    case 'geofield':
       foreach ($view->field as $field_idx => $field) {
-        foreach ($options as $option) {
-          if ($data_source[$option] == $field_idx) {
-            $$option = $view->style_plugin->get_field_value($view->row_index, $field_idx);
-            $$option = ${$option}[0]['wkt'];
-            $view->row_index = $index;
-            $excluded_fields[] = $field_idx;
-          }
+        if ($data_source['geofield'] == $field_idx) {
+          $geofield = $view->style_plugin->get_field_value($view->row_index, $field_idx);
+          $geofield = $geofield[0]['wkt'];
+          $view->row_index = $index;
+          $excluded_fields[] = $field_idx;
         }
       }
       if (!empty($geofield)) {
@@ -177,18 +171,14 @@ function _views_geojson_render_fields($view, $row, $index) {
         }
       }
       break;
-    case 'wkt':
-      $options = array('wkt');
 
+    case 'wkt':
       foreach ($view->field as $field_idx => $field) {
-        foreach ($options as $option) {
-          if ($data_source[$option] == $field_idx) {
-            $$option = $field->advanced_render($row);
-            $excluded_fields[] = $field_idx;
-          }
+        if ($data_source['wkt'] == $field_idx) {
+          $wkt = $field->advanced_render($row);
+          $excluded_fields[] = $field_idx;
         }
       }
-
       if (!empty($wkt)) {
         geophp_load();
         $json = geoPHP::load($wkt, 'wkt');
@@ -205,17 +195,12 @@ function _views_geojson_render_fields($view, $row, $index) {
   }
 
   // Add the name and description attributes
-  // as choosen through interface
+  // as chosen through interface
   if ($data_source['name_field']) {
-    $options    = array('name_field');
-    $name_field = NULL;
-
     foreach ($view->field as $field_idx => $field) {
-      foreach ($options as $option) {
-        if ($data_source[$option] == $field_idx) {
-          $$option           = $field->advanced_render($row);
-          $excluded_fields[] = $field_idx;
-        }
+      if ($data_source['name_field'] == $field_idx) {
+        $name_field = $field->advanced_render($row);
+        $excluded_fields[] = $field_idx;
       }
     }
     $feature['properties']['name'] = $name_field;
@@ -225,19 +210,14 @@ function _views_geojson_render_fields($view, $row, $index) {
   }
 
   if ($data_source['description_field']) {
-    $options           = array('description_field');
-    $description_field = NULL;
-
     foreach ($view->field as $field_idx => $field) {
-      foreach ($options as $option) {
-        if ($data_source[$option] == $field_idx) {
-          $$option           = $field->advanced_render($row);
-          $excluded_fields[] = $field_idx;
-        }
-        if ($data_source[$option] === '#node') {
-          $view_mode = $data_source['view_mode'] ? $data_source['view_mode'] : 'full';
-          $$option   = drupal_render(node_view(node_load($row->nid), $view_mode));
-        }
+      if ($data_source['description_field'] == $field_idx) {
+        $description_field = $field->advanced_render($row);
+        $excluded_fields[] = $field_idx;
+      }
+      if ($data_source['description_field'] === '#node') {
+        $view_mode = $data_source['view_mode'] ? $data_source['view_mode'] : 'full';
+        $description_field = drupal_render(node_view(node_load($row->nid), $view_mode));
       }
     }
     $feature['properties']['description'] = $description_field;
@@ -262,17 +242,6 @@ function _views_geojson_render_fields($view, $row, $index) {
 
   return $feature;
 }
-
-/**
- * Render a view's output as JSON.
- *
- * The function will directly output a JSON string instead of returning it.
- *
- * @param $items
- *   The collection of items to encode into JSON.
- * @param $options
- *   Render options.
- */
 
 /**
  * Encodes GeoJSON in a pretty-printed fashion.
