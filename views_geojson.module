@@ -113,6 +113,11 @@ function _views_geojson_render_fields($view, $row, $index) {
   $data_source     = $view->style_plugin->options['data_source'];
   $field_ids       = array_keys($view->field);
 
+  // Pre-render fields to handle those rewritten with tokens
+  foreach ($view->field as $field_idx => $field) {
+    $field->advanced_render($row);
+  }
+
   switch ($data_source['value']) {
     case 'latlon':
       $options   = array('latitude', 'longitude');
