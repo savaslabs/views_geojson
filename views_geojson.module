@@ -138,27 +138,6 @@ function _views_geojson_render_fields($view, $row, $index) {
       }
       break;
 
-    case 'boundingbox':
-      list($top_field, $right_field,
-          $left_field, $bottom_field) = $this_->get_bounds($fields, $data_source);
-      $top    = floatval($row->$top_field);
-      $right  = floatval($row->$right_field);
-      $left   = floatval($row->$left_field);
-      $bottom = floatval($row->$bottom_field);
-      if (!empty($top) && !empty($left)) {
-        $feature['geometry'] = array(
-          'type'        => 'Polygon',
-          'coordinates' => array(
-            array($left, $top),
-            array($right, $top),
-            array($right, $bottom),
-            array($left, $bottom))
-        );
-      }
-      array_push($excluded_fields, $top_field, $right_field,
-        $left_field, $bottom_field);
-      break;
-
     case 'geofield':
       foreach ($view->field as $field_idx => $field) {
         if ($data_source['geofield'] == $field_idx) {
@@ -232,7 +211,7 @@ function _views_geojson_render_fields($view, $row, $index) {
   }
 
   // Fill in attributes that are not:
-  // - Coordinate/bounding box fields
+  // - Coordinate fields
   // - Name/description (already processed)
   // - Views "excluded" fields
   foreach ($field_ids as $id) {

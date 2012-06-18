@@ -22,10 +22,6 @@ class views_plugin_style_geojson extends views_plugin_style {
         'latitude' => array('default' => 0),
         'longitude' => array('default' => 0),
         'openlayers_wkt' => array('default' => 0),
-        'bbox_top' => array('default' => 0),
-        'bbox_right' => array('default' => 0),
-        'bbox_bottom' => array('default' => 0),
-        'bbox_left' => array('default' => 0),
         'name_field' => array('default' => 0),
         'description_field' => array('default' => 0),
       ),
@@ -70,7 +66,6 @@ class views_plugin_style_geojson extends views_plugin_style {
     // Default data source
     $data_source_options = array(
       'latlon' => t('Other: Lat/Lon Point'),
-      'boundingbox' => t('Other: Bounding Box'),
       'geofield' => t('Geofield'),
       'wkt' => t('WKT'),
     );
@@ -140,44 +135,6 @@ class views_plugin_style_geojson extends views_plugin_style {
         '#default_value' => $this->options['data_source']['wkt'],
         '#process' => array('ctools_dependent_process'),
         '#dependency' => array('edit-style-options-data-source-value' => array('wkt')),
-      );
-
-      // Other: Bounding Box
-      $form['data_source']['bbox_top'] = array(
-        '#type' => 'select',
-        '#title' => t('Top Field'),
-        '#description' => t('Choose a field for Top.  This should be a field that is a decimal or float value.'),
-        '#options' => $fields,
-        '#default_value' => $this->options['data_source']['bbox_top'],
-        '#process' => array('ctools_dependent_process'),
-        '#dependency' => array('edit-style-options-data-source-value' => array('boundingbox')),
-      );
-      $form['data_source']['bbox_right'] = array(
-        '#type' => 'select',
-        '#title' => t('Right Field'),
-        '#description' => t('Choose a field for Right.  This should be a field that is a decimal or float value.'),
-        '#options' => $fields,
-        '#default_value' => $this->options['data_source']['bbox_right'],
-        '#process' => array('ctools_dependent_process'),
-        '#dependency' => array('edit-style-options-data-source-value' => array('boundingbox')),
-      );
-      $form['data_source']['bbox_bottom'] = array(
-        '#type' => 'select',
-        '#title' => t('Bottom Field'),
-        '#description' => t('Choose a field for Bottom.  This should be a field that is a decimal or float value.'),
-        '#options' => $fields,
-        '#default_value' => $this->options['data_source']['bbox_bottom'],
-        '#process' => array('ctools_dependent_process'),
-        '#dependency' => array('edit-style-options-data-source-value' => array('boundingbox')),
-      );
-      $form['data_source']['bbox_left'] = array(
-        '#type' => 'select',
-        '#title' => t('Left Field'),
-        '#description' => t('Choose a field for Left.  This should be a field that is a decimal or float value.'),
-        '#options' => $fields,
-        '#default_value' => $this->options['data_source']['bbox_left'],
-        '#process' => array('ctools_dependent_process'),
-        '#dependency' => array('edit-style-options-data-source-value' => array('boundingbox')),
       );
     }
     $form['data_source']['name_field'] = array(
@@ -285,15 +242,6 @@ class views_plugin_style_geojson extends views_plugin_style {
         ' . theme('item_list', $variable_fields) . '
         <p>' . t('Please note that this does not apply to Grouped Displays.') . '</p>
       ',
-    );
-  }
-
-  function get_bounds($fields, $data_source) {
-    return array(
-      $fields[$data_source['bbox_top']]['field_alias'],
-      $fields[$data_source['bbox_right']]['field_alias'],
-      $fields[$data_source['bbox_left']]['field_alias'],
-      $fields[$data_source['bbox_bottom']]['field_alias'],
     );
   }
 
