@@ -216,7 +216,7 @@ function _views_geojson_render_fields($view, $row, $index) {
   // - Views "excluded" fields
   foreach ($field_ids as $id) {
     $field = $view->field[$id];
-    if (!in_array($id, $excluded_fields, TRUE)) {
+    if (!in_array($id, $excluded_fields, TRUE) && !($field->options['exclude'])) {
       $value                                              = $row->{$view->field[$id]->field_alias};
       $value_rendered                                     = $field->advanced_render($row);
       $feature['properties'][$id]                         = is_numeric($value) ? floatval($value) : $value;
