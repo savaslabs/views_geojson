@@ -53,6 +53,8 @@ USAGE
     content to be output without normal page markup. If you are calling a view
     programatically, enable "Views API mode" to avoid early termination of
     Drupal execution.
+6. If using with the OpenLayers module, your new GeoJSON layer will be available
+  as an Overlay layer on the "Layers & Styles" tab when editing your map.
 
 Bounding Box Filtering
 --------------------
