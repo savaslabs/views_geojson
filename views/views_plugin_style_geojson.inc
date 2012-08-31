@@ -77,8 +77,6 @@ class views_plugin_style_geojson extends views_plugin_style {
       '#type' => 'fieldset',
       '#tree' => TRUE,
       '#title' => t('Data Source'),
-//      '#collapsible' => TRUE,
-//      '#collapsed' => FALSE,
     );
     $form['data_source']['value'] = array(
       '#type' => 'select',
@@ -195,8 +193,8 @@ class views_plugin_style_geojson extends views_plugin_style {
       '#type' => 'fieldset',
       '#title' => t('Attributes and Styling'),
       '#description' => t('Attributes are field data attached to each feature.  This can be used with styling to create Variable styling.'),
-//      '#collapsible' => TRUE,
-//      '#collapsed' => TRUE,
+      '#collapsible' => TRUE,
+      '#collapsed' => TRUE,
     );
     $form['jsonp_prefix'] = array(
       '#type' => 'textfield',
@@ -236,13 +234,15 @@ class views_plugin_style_geojson extends views_plugin_style {
         $variable_fields[$field] = '${' . $field . '}';
       }
     }
+    $variables_list = array('items' => $variable_fields, 'attributes' => array('class' => array('description')));
+
+    $markup = '<p class="description">' . t('Fields added to this view will be attached to their respective feature, (point, line, polygon,) as attributes. These attributes can then be used to add variable styling to your themes. This is accomplished by using the %syntax syntax in the values for a style.  The following is a list of formatted variables that are currently available; these can be placed right in the style interface.', array('%syntax' => '${field_name}')) . '</p>';
+    $markup .= theme('item_list', $variables_list);
+    $markup .= '<p class="description">' . t('Please note that this does not apply to Grouped Displays.') . '</p>';
+
     $form['attributes']['styling'] = array(
       '#type' => 'markup',
-      '#value' => '
-        <p>' . t('Any fields that you add to this view will be attached to their respective feature (point, line, polygon) as attributes.  These attributes can then be used to add variable styling to your themes.  This is accomplished by using the %syntax syntax in the values for a style.  The following is a list of formatted variables that are currently available; these can be placed right in the style interface.', array('%syntax' => '${field_name}')) . '</p>
-        ' . theme('item_list', $variable_fields) . '
-        <p>' . t('Please note that this does not apply to Grouped Displays.') . '</p>
-      ',
+      '#markup' => $markup,
     );
   }
 
