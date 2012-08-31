@@ -21,9 +21,11 @@ class views_plugin_style_geojson extends views_plugin_style {
         'value' => array('default' => 'asc'),
         'latitude' => array('default' => 0),
         'longitude' => array('default' => 0),
-        'openlayers_wkt' => array('default' => 0),
+        'geofield' => array('default' => 0),
+        'wkt' => array('default' => 0),
         'name_field' => array('default' => 0),
         'description_field' => array('default' => 0),
+        'view_mode' => array('default' => 'full'),
       ),
     );
     $options['attributes'] = array('default' => NULL, 'translatable' => FALSE);
