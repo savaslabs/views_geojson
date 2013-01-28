@@ -89,6 +89,10 @@ class views_geojson_bbox_argument extends views_handler_argument {
    */
   function query() {
     $this->ensure_my_table();
+    // TODO: this argument should be set in
+    // views_plugin_argument_default_bboxquery::get_argument
+    // unfortunately that seems broken.
+    // @see http://drupal.org/node/1884214
     if (!empty($this->argument) && ($this->argument !== TRUE)) {
       $bbox = $this->_explode_bbox_coords($this->argument);
     } else {
