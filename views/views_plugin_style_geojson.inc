@@ -167,7 +167,7 @@ class views_plugin_style_geojson extends views_plugin_style {
       $view_modes_machine_names[] = array_keys($entity_info['node']['view modes']);
       // Get the labels (human readable) of the view modes
       foreach ($entity_info['node']['view modes'] as $key => $view_mode) {
-        $view_modes_labels[] = $view_mode[label];
+        $view_modes_labels[] = $view_mode['label'];
       }
       // Combine the view mode machine name with its label.
       // @TODO: Could this be done better?
