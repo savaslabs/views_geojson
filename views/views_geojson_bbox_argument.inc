@@ -89,7 +89,7 @@ class views_geojson_bbox_argument extends views_handler_argument {
    */
   function query() {
     $this->ensure_my_table();
-    if (!empty($this->argument)) {
+    if (!empty($this->argument) && ($this->argument !== TRUE)) {
       $bbox = $this->_explode_bbox_coords($this->argument);
     } else {
       $bbox = $this->_get_bbox_coords();
