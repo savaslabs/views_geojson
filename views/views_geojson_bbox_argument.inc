@@ -102,9 +102,9 @@ class views_geojson_bbox_argument extends views_handler_argument {
     // If bbox not set properly, don't edit the query.
     // @TODO: Move this into argument validation?
     if (!isset($bbox['left']) ||
-        !isset ($bbox['bottom']) ||
-        !isset ($bbox['right']) ||
-        !isset ($bbox['top'])) {
+      !isset ($bbox['bottom']) ||
+      !isset ($bbox['right']) ||
+      !isset ($bbox['top'])) {
       return;
     }
 

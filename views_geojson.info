@@ -8,5 +8,5 @@ files[] = views/views_plugin_style_geojson.inc
 files[] = views/views_geojson_bbox_argument.inc
 files[] = views/views_plugin_argument_default_bboxquery.inc
 
-dependencies[] = views (>=3.0)
-dependencies[] = geophp (>=1.0)
+dependencies[] = views
+dependencies[] = geophp
