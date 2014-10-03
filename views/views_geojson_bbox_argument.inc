@@ -87,7 +87,7 @@ class views_geojson_bbox_argument extends views_handler_argument {
   /*
    * Use the filter to modify the query.
    */
-  function query() {
+  function query($group_by = FALSE) {
     $this->ensure_my_table();
     // TODO: this argument should be set in
     // views_plugin_argument_default_bboxquery::get_argument
