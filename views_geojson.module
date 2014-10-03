@@ -60,14 +60,14 @@ function _views_geojson_render_fields($view, $row, $index) {
       foreach ($view->field as $field_idx => $field) {
         if ($data_source['geofield'] == $field_idx) {
           $geofield = $view->style_plugin->get_field_value($view->row_index, $field_idx);
-          $geofield = $geofield[0]['wkt'];
+          $geofield = (isset($geofield[0]['wkt'])) ? $geofield[0]['wkt'] : $geofield[0]['geom'];
           $view->row_index = $index;
           $excluded_fields[] = $field_idx;
         }
       }
       if (!empty($geofield)) {
         geophp_load();
-        $json = geoPHP::load($geofield, 'wkt');
+        $json = geoPHP::load($geofield);
         if (is_object($json)) {
           $feature['geometry'] = json_decode($json->out('json'));
         }
