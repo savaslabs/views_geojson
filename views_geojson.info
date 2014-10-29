@@ -10,3 +10,4 @@ files[] = views/views_plugin_argument_default_bboxquery.inc
 
 dependencies[] = views
 dependencies[] = geophp
+dependencies[] = entity
