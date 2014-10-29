@@ -11,6 +11,44 @@
  * Implementation of views_plugin_style
  */
 class views_plugin_style_geojson extends views_plugin_style {
+
+  /**
+   * Store the entity type.
+   * @var string
+   */
+  protected $entity_type;
+
+  /**
+   * Store the entity info array.
+   * @var array
+   */
+  protected $entity_info;
+
+  /**
+   * If this view is displaying an entity, save the entity type and info.
+   */
+  function init(&$view, &$display, $options = NULL) {
+    parent::init($view, $display, $options);
+
+    // Search api indexes store the entity metadata in the views data array.
+    if (strpos($view->base_table, 'search_api_index_') === 0) {
+      $views_data = views_fetch_data();
+      if (isset($views_data[$view->base_table]['table']['entity type'])) {
+        $this->entity_type = $views_data[$view->base_table]['table']['entity type'];
+        $this->entity_info = entity_get_info($this->entity_type);
+      }
+    }
+    else {
+      foreach (entity_get_info() as $key => $info) {
+        if ($view->base_table == $info['base table']) {
+          $this->entity_type = $key;
+          $this->entity_info = $info;
+          break;
+        }
+      }
+    }
+  }
+
   /*
    * Set default options
    */
@@ -58,10 +96,24 @@ class views_plugin_style_geojson extends views_plugin_style {
       return;
     }
 
-    // Go through fields
+    // Go through fields.
     foreach ($handlers as $field_id => $handler) {
       $fields[$field_id] = $handler->definition['title'];
-      $fields_info[$field_id]['type'] = $handler->field_info['type'];
+
+      $field_info = NULL;
+      if (!empty($handler->field_info)) {
+        $field_info = $handler->field_info;
+      }
+      elseif ($this->is_entity_views_handler($handler)) {
+        // Strip the basic field name from the entity views handler field and
+        // fetch the field info for it.
+        $property = EntityFieldHandlerHelper::get_selector_field_name($handler->real_field);
+        if ($field_name = EntityFieldHandlerHelper::get_selector_field_name(substr($handler->real_field, 0, strpos($handler->real_field, ':' . $property)), ':')) {
+          $field_info = field_info_field($field_name);
+        }
+      }
+
+      $fields_info[$field_id]['type'] = $field_info['type'];
     }
 
     // Default data source
@@ -249,5 +301,29 @@ class views_plugin_style_geojson extends views_plugin_style {
     );
 
     return theme($this->theme_functions(), array('view' => $view, 'options' => $options, 'features_collection' => $features_collection));
+  }
+
+  /**
+   * Checks if a field handler class is handled by the entity module.
+   *
+   * @param object $field_handler_instance
+   *   The field handler instance to check.
+   *
+   * @return bool
+   *   TRUE if the field is handled by the entity module views integration.
+   */
+  public function is_entity_views_handler($field_handler_instance) {
+    $static_cache = &drupal_static(__METHOD__, array());
+    $handler_class = get_class($field_handler_instance);
+
+    if (!isset($static_cache[$handler_class])) {
+      $static_cache[$handler_class] = FALSE;
+      foreach (entity_views_get_field_handlers() as $field_handler) {
+        if ($field_handler_instance instanceof $field_handler) {
+          return $static_cache[$handler_class] = TRUE;
+        }
+      }
+    }
+    return $static_cache[$handler_class];
   }
 }
