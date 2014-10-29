@@ -116,6 +116,12 @@ class views_plugin_style_geojson extends views_plugin_style {
       $fields_info[$field_id]['type'] = $field_info['type'];
     }
 
+    // If this is a page display, notify the user.
+    // @todo At the next major release, remove support for using page display
+    if ($this->display->display_plugin == 'page') {
+      drupal_set_message('<p>' . t('Using the GeoJSON display style on "Page" displays is deprecated, but will continue to work until the next release. Instead, the GeoJSON display style should be used with a "Feed" display.') . '</p>', 'warning');
+    }
+
     // Default data source
     $data_source_options = array(
       'latlon' => t('Other: Lat/Lon Point'),
@@ -129,6 +135,7 @@ class views_plugin_style_geojson extends views_plugin_style {
       '#tree' => TRUE,
       '#title' => t('Data Source'),
     );
+
     $form['data_source']['value'] = array(
       '#type' => 'select',
       '#multiple' => FALSE,
@@ -137,6 +144,7 @@ class views_plugin_style_geojson extends views_plugin_style {
       '#options' => $data_source_options,
       '#default_value' => $this->options['data_source']['value'],
     );
+
     // Other Lat and Lon data sources
     if (count($fields > 0)) {
       $form['data_source']['latitude'] = array(
@@ -148,6 +156,7 @@ class views_plugin_style_geojson extends views_plugin_style {
         '#process' => array('ctools_dependent_process'),
         '#dependency' => array('edit-style-options-data-source-value' => array('latlon')),
       );
+
       $form['data_source']['longitude'] = array(
         '#type' => 'select',
         '#title' => t('Longitude Field'),
@@ -188,6 +197,7 @@ class views_plugin_style_geojson extends views_plugin_style {
         '#dependency' => array('edit-style-options-data-source-value' => array('wkt')),
       );
     }
+
     $form['data_source']['name_field'] = array(
       '#type' => 'select',
       '#title' => t('Title Field'),
@@ -214,12 +224,14 @@ class views_plugin_style_geojson extends views_plugin_style {
       '#collapsible' => TRUE,
       '#collapsed' => TRUE,
     );
+
     $form['jsonp_prefix'] = array(
       '#type' => 'textfield',
       '#title' => t('JSONP prefix'),
       '#default_value' => $this->options['jsonp_prefix'],
       '#description' => t('If used the JSON output will be enclosed with parentheses and prefixed by this label, as in the JSONP format.'),
     );
+
     $form['content_type'] = array(
       '#type'           => 'radios',
       '#title'          => t('Content-Type'),
@@ -230,12 +242,15 @@ class views_plugin_style_geojson extends views_plugin_style {
       '#default_value'  => $this->options['content_type'],
       '#description'    => t('The Content-Type header that will be sent with the JSON output.')
     );
-    $form['using_views_api_mode'] = array(
-      '#type'           => 'checkbox',
-      '#title'          => t('Views API mode'),
-      '#default_value'  => $this->options['using_views_api_mode'],
-      '#description'    => t('Not using View API mode means the JSON gets output directly and the server ceases normal page processing.  Using it means the server does not cease processing after outputting the JSON.  This allows the Views API to be used with the view without having to prematurely terminate page processing.'),
-    );
+
+    if ($this->display->display_plugin == 'page') {
+      $form['using_views_api_mode'] = array(
+        '#type'           => 'checkbox',
+        '#title'          => t('Views API mode'),
+        '#default_value'  => $this->options['using_views_api_mode'],
+        '#description'    => t('Not using View API mode means the JSON gets output directly and the server ceases normal page processing.  Using it means the server does not cease processing after outputting the JSON.  This allows the Views API to be used with the view without having to prematurely terminate page processing.'),
+      );
+    }
 
     // Make array of attributes
     $variable_fields = array();
@@ -265,42 +280,55 @@ class views_plugin_style_geojson extends views_plugin_style {
   }
 
   /**
-   * Implementation of view_style_plugin::theme_functions(). Returns an array of theme functions to use
-   * for the current style plugin
-   * @return array
-   */
-  function theme_functions() {
-    return views_theme_functions('views_views_geojson_style', $this->view, $this->display);
-  }
-
-  /**
-   * Implementation of views_style_plugin::additional_theme_functions(). Returns empty array.
-   * @return array
-   */
-  function additional_theme_functions() {
-    return array();
-  }
-
-  /**
    * Implementation of view_style_plugin::render()
    */
   function render() {
-    $view = $this->view;
-    $options = $this->options;
+    $args = func_get_args();
+    $results = array_shift($args);
 
-    $features = array();
-    foreach ($view->result as $count => $row) {
-      $view->row_index = $count;
-      $features[] = _views_geojson_render_fields($view, $row, $count);
-    }
-    unset($view->row_index);
-
-    $features_collection = array(
+    $features = array(
       'type' => 'FeatureCollection',
-      'features' => $features,
+      'features' => array(),
     );
 
-    return theme($this->theme_functions(), array('view' => $view, 'options' => $options, 'features_collection' => $features_collection));
+    // Render each row.
+    foreach ($results as $i => $row) {
+      $this->view->row_index = $i;
+      $features['features'][] = _views_geojson_render_fields($this->view, $row, $i);
+    }
+    unset($this->view->row_index);
+
+    // Render the collection to JSON.
+    $json = drupal_json_encode($features);
+
+    if (!empty($this->options['jsonp_prefix'])) {
+      $json = $this->options['jsonp_prefix'] . "($json)";
+    }
+
+    if (empty($this->view->preview)) {
+      // Change the content type header since we're sending a JSON response.
+      $content_type = ($this->options['content_type'] == 'default') ? 'application/json' : $this->options['content_type'];
+      drupal_add_http_header("Content-Type", "$content_type; charset=utf-8");
+    } else {
+      // Pretty-print the JSON. This only works for 'page' displays.
+      $json = _views_geojson_encode_formatted($features);
+      if (!empty($this->options['jsonp_prefix'])) {
+        $json = $this->options['jsonp_prefix'] . "($json)";
+      }
+      if ($this->display->display_plugin == 'page') {
+        $json = "<pre>$json</pre>";
+      }
+    }
+
+    if (empty($this->view->preview) && $this->display->display_plugin == 'page' && !$this->options['using_views_api_mode']) {
+      // Page display prints and exits; this is BAD (prevents caching) but
+      // supports legacy configurations.
+      print $json;
+      exit;
+    }
+
+    // Everything else returns output.
+    return $json;
   }
 
   /**
