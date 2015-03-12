@@ -122,6 +122,7 @@ function _views_geojson_render_fields($view, $row, $index) {
   }
 
   if ($data_source['description_field']) {
+    $description_field = NULL;
     foreach ($view->field as $field_idx => $field) {
       if ($data_source['description_field'] == $field_idx) {
         $description_field = $field->advanced_render($row);
