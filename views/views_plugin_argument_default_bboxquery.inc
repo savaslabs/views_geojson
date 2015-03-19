@@ -6,6 +6,8 @@
 
 /**
  * The BBOX query string argument default handler.
+ *
+ * @TODO: Write an options_validate() method.
  */
 class views_plugin_argument_default_bboxquery extends views_plugin_argument_default {
   function option_definition() {
@@ -26,11 +28,11 @@ class views_plugin_argument_default_bboxquery extends views_plugin_argument_defa
     );
     $form['arg_id'] = array(
       '#type' => 'textfield',
-      '#title'  => t('Query argument ID'),
+      '#title' => t('Query argument ID'),
       '#size' => 60,
       '#maxlength' => 64,
-      '#default_value'  => $this->options['arg_id'] ? $this->options['arg_id'] : t('bbox'),
-      '#description'  => t('The ID of the query argument.<br />For OpenLayers use <em>bbox</em>, (as in "<em>?bbox=left,bottom,right,top</em>".)'),
+      '#default_value' => $this->options['arg_id'] ? $this->options['arg_id'] : t('bbox'),
+      '#description' => t('The ID of the query argument.<br />For OpenLayers use <em>bbox</em>, (as in "<em>?bbox=left,bottom,right,top</em>".)'),
     );
   }
 
@@ -38,16 +40,14 @@ class views_plugin_argument_default_bboxquery extends views_plugin_argument_defa
    * Return the default argument.
    */
   function get_argument() {
-    // @todo: use drupal_get_query_parameters
-    // @todo: shouldn't we sanitize this user input ?
-    if (isset($_GET[$this->options['arg_id']])) {
-      return $_GET[$this->options['arg_id']];
-    } else {
-      return TRUE; // Return all values if arg not present
+    // @TODO: Shouldn't we sanitize this user input?
+    $query = drupal_get_query_parameters();
+    if (isset($query[$this->options['arg_id']])) {
+      return $query[$this->options['arg_id']];
+    }
+    else {
+      // Return all values if arg not present.
+      return TRUE;
     }
   }
 }
-
-/**
- * @}
- */
