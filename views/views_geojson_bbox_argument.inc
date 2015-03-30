@@ -56,53 +56,28 @@ class views_geojson_bbox_argument extends views_handler_argument {
   }
 
   /**
-   * Split BBOX string into {left, bottom, right, top}.
+   * Use the argument to modify the query.
    */
-  function _explode_bbox_coords($bbox_coords_str) {
-    $bbox_coords = explode(',', $bbox_coords_str);
-    if (count($bbox_coords) == 4) {
-      $bbox = array(
-        'left' => $bbox_coords[0],
-        'bottom' => $bbox_coords[1],
-        'right' => $bbox_coords[2],
-        'top' => $bbox_coords[3],
-      );
-      return $bbox;
-    }
-  }
-
-  /**
-   * Make sure no results are found by adding 1=0.
-   *
-   * @TODO: is this the most efficient way?
-   */
-  function _no_result() {
-    if ($this->options['empty_result']) {
-      $group = $this->query->set_where_group('AND');
-      $this->query->add_where($group, 1, 0, '=');
-    }
-  }
-
-  /**
-   * Use the filter to modify the query.
-   */
-  function query($group_by = FALSE) {
-    $this->ensure_my_table();
-    // TODO: this argument should be set in
-    // views_plugin_argument_default_bboxquery::get_argument
-    // unfortunately that seems broken.
-    // @see http://drupal.org/node/1884214
+  public function query($group_by = FALSE) {
+    // Apply no bbox filtering if the argument is absent or if this is a
+    // search_api based view (which doesn't support sql specific query changes).
     if ((empty($this->argument)) || ($this->view->base_field == 'search_api_id')) {
-      return;
+      // @TODO: Implement Search API filtering if Solr BBOX is not an option.
+      // @see: https://www.drupal.org/project/search_api_location_solr_bboxfield
+      return NULL;
     }
+
     $this->ensure_my_table();
+
+    // Process coordinates: split string and make sure coordinates are clean.
     $bbox = $this->_explode_bbox_coords($this->argument);
 
-    // If bbox not set properly, don't edit the query.
-    // @TODO: Move this into argument validation?
-    if (!isset($bbox['left']) || !isset ($bbox['bottom']) || !isset ($bbox['right']) || !isset ($bbox['top'])) {
-      $this->_no_result();
-      return;
+    if (empty($bbox)) {
+      // Return no values if arg is invalid.
+      $this->argument = FALSE;
+      $this->view->built = TRUE;
+      $this->view->executed = TRUE;
+      return NULL;
     }
 
     if (isset($this->view->display_handler->display->display_options['style_options'])) {
@@ -128,8 +103,11 @@ class views_geojson_bbox_argument extends views_handler_argument {
       $lat_field_table = $lon_field_table = $lat_field_obj->table;
     }
     else {
-      $this->_no_result();
-      return;
+      // @TODO: Implement WKT (and possibly other data source types).
+      $this->argument = FALSE;
+      $this->view->built = TRUE;
+      $this->view->executed = TRUE;
+      return NULL;
     }
 
     // If the Latitude / Longitude fields are really geofields,
@@ -173,7 +151,7 @@ class views_geojson_bbox_argument extends views_handler_argument {
           $left = -1 * ($left % 180);
           $this->query->add_where($group, "$lon_field_table.$lon_field_name", array(
             $left,
-            0
+            0,
           ), 'BETWEEN');
         }
         if ($right < 180) {
@@ -184,7 +162,7 @@ class views_geojson_bbox_argument extends views_handler_argument {
           $right = -1 * ($right % 180);
           $this->query->add_where($group, "$lon_field_table.$lon_field_name", array(
             $right,
-            0
+            0,
           ), 'BETWEEN');
         }
       }
@@ -198,5 +176,55 @@ class views_geojson_bbox_argument extends views_handler_argument {
     $group = $this->query->set_where_group('AND');
     $this->query->add_where($group, "$lat_field_table.$lat_field_name", $bottom, '>=');
     $this->query->add_where($group, "$lat_field_table.$lat_field_name", $top, '<=');
+  }
+
+
+  /**
+   * Split BBOX string into {left, bottom, right, top}.
+   *
+   * @param string $bbox_coords_str
+   *   4 comma delimited coordinates.
+   *
+   * @return array
+   *   Array of 4 valid bbox coordinates or
+   *   empty array if coordinates are invalid.
+   */
+  private function _explode_bbox_coords($bbox_coords_str) {
+    if (!is_string($bbox_coords_str)) {
+      return array();
+    }
+
+    $bbox_coords = explode(',', $bbox_coords_str);
+    if (count($bbox_coords) == 4) {
+      if (!$this->_check_bbox_coords($bbox_coords)) {
+        return array();
+      }
+      $bbox = array(
+        'left' => $bbox_coords[0],
+        'bottom' => $bbox_coords[1],
+        'right' => $bbox_coords[2],
+        'top' => $bbox_coords[3],
+      );
+      return $bbox;
+    }
+    else {
+      return array();
+    }
+  }
+
+  /**
+   * Check if the BBOX coordinates are valid coordinates.
+   *
+   * Currently only checks if coordinates are numeric.
+   *
+   * @TODO: if supported by projection this could include degree checking.
+   */
+  private function _check_bbox_coords($bbox_coords) {
+    foreach ($bbox_coords as $coord) {
+      if (!is_numeric($coord)) {
+        return FALSE;
+      }
+    }
+    return TRUE;
   }
 }

@@ -40,14 +40,23 @@ class views_plugin_argument_default_bboxquery extends views_plugin_argument_defa
    * Return the default argument.
    */
   function get_argument() {
-    // @TODO: Shouldn't we sanitize this user input?
     $query = drupal_get_query_parameters();
     if (isset($query[$this->options['arg_id']])) {
+      // Just set the argument here. We'll validate and sanitize the input in
+      // views_geojson_bbox_argument::query().
       return $query[$this->options['arg_id']];
     }
     else {
-      // Return all values if arg not present.
-      return TRUE;
+      if ($this->argument->options['empty_result']) {
+        // Return no values if arg not present and empty result option is set.
+        $this->view->built = TRUE;
+        $this->view->executed = TRUE;
+        return FALSE;
+      }
+      else {
+        // Return all values if arg not present.
+        return TRUE;
+      }
     }
   }
 }
