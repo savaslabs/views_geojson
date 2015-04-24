@@ -16,6 +16,10 @@ class GeoJSON extends StylePluginBase {
   public function init(ViewExecutable $view, DisplayPluginBase $display, array &$options = NULL) {
   }
 
+  protected function defineOptions() {
+    $options = parent::defineOptions();
+  }
+
   public function buildOptionsForm(&$form, FormStateInterface $form_state) {
   }
 
@@ -35,19 +39,6 @@ class GeoJSON extends StylePluginBase {
  * Implementation of views_plugin_style
  */
 class views_plugin_style_geojson extends views_plugin_style {
-
-  /**
-   * Store the entity type.
-   * @var string
-   */
-  protected $entity_type;
-
-  /**
-   * Store the entity info array.
-   * @var array
-   */
-  protected $entity_info;
-
   /**
    * If this view is displaying an entity, save the entity type and info.
    */
