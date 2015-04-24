@@ -4,6 +4,8 @@
  * Contains the BBOX query string argument default plugin.
  */
 
+// @TODO: Delete this file since it's being replaced by src/Plugin/views/argument_default/BBoxQuery.php?
+
 /**
  * The BBOX query string argument default handler.
  *
