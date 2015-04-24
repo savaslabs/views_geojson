@@ -6,35 +6,6 @@
  */
 
 /**
- * Implements hook_views_plugins().
- *
- * Adds GeoJSON feed style.
- */
-function views_geojson_views_plugins() {
-  return array(
-    'style' => array(
-      'views_geojson_feed' => array(
-        'title' => t('GeoJSON Feed'),
-        'help' => t('Displays nodes in the GeoJSON data format.'),
-        'handler' => 'views_plugin_style_geojson',
-        'uses row plugin' => FALSE,
-        'uses fields' => TRUE,
-        'uses options' => TRUE,
-        'uses grouping' => FALSE,
-        'type' => 'feed',
-        'even empty' => TRUE,
-      ),
-    ),
-    'argument default' => array(
-      'querystring' => array(
-        'title' => t('Bounding box from query string'),
-        'handler' => 'views_plugin_argument_default_bboxquery',
-      ),
-    ),
-  );
-}
-
-/**
  * Implements hook_views_data().
  *
  * Adds bounding box contextual filter.
