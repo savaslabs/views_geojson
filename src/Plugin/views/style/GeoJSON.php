@@ -19,7 +19,7 @@ use Drupal\views\ViewExecutable;
  * @ViewsStyle(
  *   id = "geojson",
  *   title = @Translation("GeoJSON"),
- *   help = @Translation("Displays nodes in the GeoJSON data format."),
+ *   description = @Translation("Display nodes in the GeoJSON data format."),
  *   theme = "views_view_geojson",
  *   display_types = {"normal"}
  * )
