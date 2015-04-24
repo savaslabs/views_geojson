@@ -39,6 +39,32 @@ class GeoJSON extends StylePluginBase {
    */
   protected $usesFields = TRUE;
 
+  public function init(ViewExecutable $view, DisplayPluginBase $display, array &$options = NULL) {
+
+    parent::init($view, $display, $options);
+
+    // Search api indexes store the entity metadata in the views data array.
+    if (strpos($view->base_table, 'search_api_index_') === 0) {
+      $views_data = views_fetch_data();
+      if (isset($views_data[$view->base_table]['table']['entity type'])) {
+        $this->entity_type = $views_data[$view->base_table]['table']['entity type'];
+        $this->entity_info = entity_get_info($this->entity_type);
+      }
+    }
+    else {
+      // Pretty-print the JSON.
+      module_load_include('inc', 'views_geojson', 'views_geojson.helpers');
+      foreach (entity_get_info() as $key => $info) {
+        if ($view->base_table == $info['base table']) {
+          $this->entity_type = $key;
+          $this->entity_info = $info;
+          break;
+        }
+      }
+    }
+
+  }
+  
   protected function defineOptions() {
     $options = parent::defineOptions();
     $options['data_source'] = array(
