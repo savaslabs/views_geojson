@@ -35,24 +35,6 @@ function views_geojson_views_plugins() {
 }
 
 /**
- * Implements hook_views_handlers().
- *
- * Adds bounding box contextual filter.
- */
-function views_geojson_views_handlers() {
-  return array(
-    'info' => array(
-      'path' => drupal_get_path('module', 'views_geojson') . '/views',
-    ),
-    'handlers' => array(
-      'views_geojson_bbox_argument' => array(
-        'parent' => 'views_handler_argument',
-      ),
-    ),
-  );
-}
-
-/**
  * Implements hook_views_data().
  *
  * Adds bounding box contextual filter.
