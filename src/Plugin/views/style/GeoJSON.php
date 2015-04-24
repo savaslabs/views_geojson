@@ -1,7 +1,7 @@
 <?php
 
 // TODO: Is this how this should be namespaced?
-namespace views_geojson\Plugin\views\style;
+namespace Drupal\views_geojson\Plugin\views\style;
 
 use Drupal\Component\Utility\Html;
 use Drupal\Core\Form\FormStateInterface;
