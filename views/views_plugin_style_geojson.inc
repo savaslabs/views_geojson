@@ -18,6 +18,31 @@ class GeoJSON extends StylePluginBase {
 
   protected function defineOptions() {
     $options = parent::defineOptions();
+    $options['data_source'] = array(
+      'contains' => array(
+        'value' => array('default' => 'asc'),
+        'latitude' => array('default' => 0),
+        'longitude' => array('default' => 0),
+        'geofield' => array('default' => 0),
+        'wkt' => array('default' => 0),
+        'name_field' => array('default' => 0),
+        'description_field' => array('default' => 0),
+      ),
+    );
+    $options['attributes'] = array('default' => NULL, 'translatable' => FALSE);
+    $options['jsonp_prefix'] = array(
+      'default' => NULL,
+      'translatable' => FALSE
+    );
+    $options['content_type'] = array(
+      'default' => 'default',
+      'translatable' => FALSE
+    );
+    $options['using_views_api_mode'] = array(
+      'default' => FALSE,
+      'translatable' => FALSE
+    );
+    return $options;
   }
 
   public function buildOptionsForm(&$form, FormStateInterface $form_state) {
