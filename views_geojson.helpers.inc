@@ -9,10 +9,7 @@
  */
 function _views_geojson_encode_formatted($json) {
   if (!is_string($json)) {
-    if (phpversion() && phpversion() >= 5.4) {
-      return json_encode($json, JSON_PRETTY_PRINT);
-    }
-    $json = json_encode($json);
+    return json_encode($json, JSON_PRETTY_PRINT);
   }
   $result = '';
   $pos = 0;               // indentation level
