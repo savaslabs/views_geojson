@@ -6,26 +6,6 @@
  */
 
 /**
- * Implements hook_views_api().
- */
-function views_geojson_views_api() {
-  return array(
-    'api' => '3.0',
-    'path' => drupal_get_path('module', 'views_geojson') . '/views',
-  );
-}
-
-/**
- * Implements hook_ctools_plugin_api().
- */
-function views_geojson_ctools_plugin_api($module, $api) {
-  return array(
-    'version' => 1,
-    'path' => drupal_get_path('module', 'views_geojson') . '/includes',
-  );
-}
-
-/**
  * Render views fields to GeoJSON.
  *
  * Takes each field from a row object and renders the field as determined by the
@@ -160,4 +140,3 @@ function _views_geojson_render_fields($view, $row, $index) {
 
   return $feature;
 }
-
