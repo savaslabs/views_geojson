@@ -11,10 +11,33 @@ use Drupal\views\Plugin\views\wizard\WizardInterface;
 use Drupal\views\Plugin\views\style\StylePluginBase;
 use Drupal\views\ViewExecutable;
 
+/**
+ *  @Plugin(
+ *   id = "geojson",
+ *   name = "GeoJSON",
+ *   help = @Translation("Displays nodes in the GeoJSON data format."),
+ *   label = @Translation("GeoJSON", context = ""),
+ * )
+ *
+ */
 class GeoJSON extends StylePluginBase {
 
-  public function init(ViewExecutable $view, DisplayPluginBase $display, array &$options = NULL) {
-  }
+  /**
+   * Does the style plugin support grouping of rows.
+   *
+   * @var bool
+   */
+  protected $usesGrouping = FALSE;
+
+  /**
+   * Does the style plugin for itself support to add fields to it's output.
+   *
+   * This option only makes sense on style plugins without row plugins, like
+   * for example table.
+   *
+   * @var bool
+   */
+  protected $usesFields = TRUE;
 
   protected function defineOptions() {
     $options = parent::defineOptions();
