@@ -13,13 +13,12 @@ use Drupal\views\ViewExecutable;
 
 /**
  *  @Plugin(
- *   id = "geojson_feed",
- *   name = "GeoJSON_Feed",
- *   help = @Translation("Displays nodes in the GeoJSON data format.)",
- *   label = @Translation("GeoJSON Feed", context = ""),
- *   type = "feed",
+ *   id = "geojson",
+ *   name = "GeoJSON",
+ *   help = @Translation("Displays nodes in the GeoJSON data format."),
+ *   label = @Translation("GeoJSON", context = ""),
  * )
- * 
+ *
  */
 class GeoJSON extends StylePluginBase {
 
