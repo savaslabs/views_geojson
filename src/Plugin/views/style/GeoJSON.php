@@ -49,6 +49,7 @@ class GeoJSON extends StylePluginBase {
     parent::buildOptionsForm($form, $form_state);
 
     $fields = array();
+    $fields_info = array();
 
     // Get list of fields in this view & flag available geodata fields.
     $handlers = $this->displayHandler->getHandlers('field');
@@ -63,25 +64,10 @@ class GeoJSON extends StylePluginBase {
       return;
     }
 
-    // Go through fields.
+    // Go through fields, fill $fields and $fields_info arrays.
     foreach ($handlers as $field_id => $handler) {
       $fields[$field_id] = $handler->definition['title'];
-
-      $field_info = NULL;
-      if (!empty($handler->field_info)) {
-        $field_info = $handler->field_info;
-      }
-      // Check if $handler is an entity views handler
-      elseif ($this->is_entity_views_handler($handler)) {
-        // Strip the basic field name from the entity views handler field and
-        // fetch the field info for it.
-        $property = EntityFieldHandlerHelper::get_selector_field_name($handler->real_field);
-        if ($field_name = EntityFieldHandlerHelper::get_selector_field_name(substr($handler->real_field, 0, strpos($handler->real_field, ':' . $property)), ':')) {
-          $field_info = field_info_field($field_name);
-        }
-      }
-
-      $fields_info[$field_id]['type'] = $field_info['type'];
+      $fields_info[$field_id]['type'] = $handler->getEntityType();
     }
 
     // Default data source.
