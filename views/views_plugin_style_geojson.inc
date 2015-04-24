@@ -1,5 +1,29 @@
 <?php
 
+// TODO: Is this how this should be namespaced?
+namespace views_geojson\Plugin\views\style;
+
+use Drupal\Component\Utility\Html;
+use Drupal\Core\Form\FormStateInterface;
+use Drupal\views\Plugin\views\PluginBase;
+use Drupal\views\Plugin\views\display\DisplayPluginBase;
+use Drupal\views\Plugin\views\wizard\WizardInterface;
+use Drupal\views\Plugin\views\style\StylePluginBase;
+use Drupal\views\ViewExecutable;
+
+class GeoJSON extends StylePluginBase {
+
+  public function init(ViewExecutable $view, DisplayPluginBase $display, array &$options = NULL) {
+  }
+
+  public function buildOptionsForm(&$form, FormStateInterface $form_state) {
+  }
+
+  public function render() {
+  }
+
+}
+
 /**
  * @file
  * Views style plugin to render nodes in the GeoJSON format.
@@ -328,33 +352,5 @@ class views_plugin_style_geojson extends views_plugin_style {
 
     // Everything else returns output.
     return $json;
-  }
-
-  /**
-   * Checks if a field handler class is handled by the entity module.
-   *
-   * @param object $field_handler_instance
-   *   The field handler instance to check.
-   *
-   * @return bool
-   *   TRUE if the field is handled by the entity module views integration.
-   */
-  public function is_entity_views_handler($field_handler_instance) {
-    if (!module_exists('entity')) {
-      return FALSE;
-    }
-
-    $static_cache = &drupal_static(__METHOD__, array());
-    $handler_class = get_class($field_handler_instance);
-
-    if (!isset($static_cache[$handler_class])) {
-      $static_cache[$handler_class] = FALSE;
-      foreach (entity_views_get_field_handlers() as $field_handler) {
-        if ($field_handler_instance instanceof $field_handler) {
-          return $static_cache[$handler_class] = TRUE;
-        }
-      }
-    }
-    return $static_cache[$handler_class];
   }
 }
