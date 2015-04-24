@@ -12,13 +12,17 @@ use Drupal\views\Plugin\views\style\StylePluginBase;
 use Drupal\views\ViewExecutable;
 
 /**
- *  @Plugin(
- *   id = "geojson",
- *   name = "GeoJSON",
- *   help = @Translation("Displays nodes in the GeoJSON data format."),
- *   label = @Translation("GeoJSON", context = ""),
- * )
+ * Style plugin to render view as GeoJSON code.
  *
+ * @ingroup views_style_plugins
+ *
+ * @ViewsStyle(
+ *   id = "geojson",
+ *   title = @Translation("GeoJSON"),
+ *   help = @Translation("Displays nodes in the GeoJSON data format."),
+ *   theme = "views_view_geojson",
+ *   display_types = {"normal"}
+ * )
  */
 class GeoJSON extends StylePluginBase {
 
