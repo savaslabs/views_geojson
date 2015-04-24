@@ -49,6 +49,7 @@ class GeoJSON extends StylePluginBase {
     parent::buildOptionsForm($form, $form_state);
 
     $fields = array();
+    $fields_info = array();
 
     // Get list of fields in this view & flag available geodata fields.
     $handlers = $this->displayHandler->getHandlers('field');
@@ -63,25 +64,10 @@ class GeoJSON extends StylePluginBase {
       return;
     }
 
-    // Go through fields.
+    // Go through fields, fill $fields and $fields_info arrays.
     foreach ($handlers as $field_id => $handler) {
       $fields[$field_id] = $handler->definition['title'];
-
-      $field_info = NULL;
-      if (!empty($handler->field_info)) {
-        $field_info = $handler->field_info;
-      }
-      // Check if $handler is an entity views handler
-      elseif ($this->is_entity_views_handler($handler)) {
-        // Strip the basic field name from the entity views handler field and
-        // fetch the field info for it.
-        $property = EntityFieldHandlerHelper::get_selector_field_name($handler->real_field);
-        if ($field_name = EntityFieldHandlerHelper::get_selector_field_name(substr($handler->real_field, 0, strpos($handler->real_field, ':' . $property)), ':')) {
-          $field_info = field_info_field($field_name);
-        }
-      }
-
-      $fields_info[$field_id]['type'] = $field_info['type'];
+      $fields_info[$field_id]['type'] = $handler->getEntityType();
     }
 
     // Default data source.
@@ -214,19 +200,31 @@ class GeoJSON extends StylePluginBase {
     if (!empty($this->options['data_source']['description_field'])) {
       $variable_fields['description'] = '${description}';
     }
-    // Go through fields.
-    foreach ($this->view->display_handler->get_handlers('field') as $field => $handler) {
+
+    // Go through fields again to ID variable fields.
+    // TODO: is it necessary to call getHandlers twice or can we reuse data from $fields?
+    foreach ($this->displayHandler->getHandlers('field') as $field => $handler) {
       if (($field != $this->options['data_source']['name_field']) && ($field != $this->options['data_source']['description_field'])) {
         $variable_fields[$field] = '${' . $field . '}';
       }
     }
+
+    // TODO: Figure out what will work here. This syntax is probably wrong!
     $variables_list = array(
-      'items' => $variable_fields,
-      'attributes' => array('class' => array('description'))
+      '#theme' => 'item_list',
+      '#items' => $variable_fields,
+      '#attributes' => array('class' => array('description'))
     );
 
-    $markup = '<p class="description">' . t('Fields added to this view will be attached to their respective feature, (point, line, polygon,) as attributes. These attributes can then be used to add variable styling to your themes. This is accomplished by using the %syntax syntax in the values for a style.  The following is a list of formatted variables that are currently available; these can be placed right in the style interface.', array('%syntax' => '${field_name}')) . '</p>';
-    $markup .= theme('item_list', $variables_list);
+    $markup = '<p class="description">' .
+      t('Fields added to this view will be attached to their respective feature, (point, line, polygon,) as attributes.
+      These attributes can then be used to add variable styling to your themes. This is accomplished by using the %syntax
+      syntax in the values for a style.  The following is a list of formatted variables that are currently available;
+      these can be placed right in the style interface.', array('%syntax' => '${field_name}'))
+      . '</p>';
+
+    // TODO: Replace this with the dedicated renderer access call (if one exists). See: https://api.drupal.org/api/drupal/core%21lib%21Drupal.php/function/Drupal%3A%3Aservice/8
+    $markup .= \Drupal::service('renderer')->render($variables_list);
     $markup .= '<p class="description">' . t('Please note that this does not apply to Grouped Displays.') . '</p>';
 
     $form['attributes']['styling'] = array(
