@@ -1,61 +1,23 @@
 <?php
 
-/**
- * @file
- * Views style plugin to render nodes in the GeoJSON format.
- *
- * @see views_plugin_style_geojson.inc
- */
+// TODO: Is this how this should be namespaced?
+namespace views_geojson\Plugin\views\style;
 
-/**
- * Implementation of views_plugin_style
- */
-class views_plugin_style_geojson extends views_plugin_style {
+use Drupal\Component\Utility\Html;
+use Drupal\Core\Form\FormStateInterface;
+use Drupal\views\Plugin\views\PluginBase;
+use Drupal\views\Plugin\views\display\DisplayPluginBase;
+use Drupal\views\Plugin\views\wizard\WizardInterface;
+use Drupal\views\Plugin\views\style\StylePluginBase;
+use Drupal\views\ViewExecutable;
 
-  /**
-   * Store the entity type.
-   * @var string
-   */
-  protected $entity_type;
+class GeoJSON extends StylePluginBase {
 
-  /**
-   * Store the entity info array.
-   * @var array
-   */
-  protected $entity_info;
-
-  /**
-   * If this view is displaying an entity, save the entity type and info.
-   */
-  function init(&$view, &$display, $options = NULL) {
-    parent::init($view, $display, $options);
-
-    // Search api indexes store the entity metadata in the views data array.
-    if (strpos($view->base_table, 'search_api_index_') === 0) {
-      $views_data = views_fetch_data();
-      if (isset($views_data[$view->base_table]['table']['entity type'])) {
-        $this->entity_type = $views_data[$view->base_table]['table']['entity type'];
-        $this->entity_info = entity_get_info($this->entity_type);
-      }
-    }
-    else {
-      // Pretty-print the JSON.
-      module_load_include('inc', 'views_geojson', 'views_geojson.helpers');
-      foreach (entity_get_info() as $key => $info) {
-        if ($view->base_table == $info['base table']) {
-          $this->entity_type = $key;
-          $this->entity_info = $info;
-          break;
-        }
-      }
-    }
+  public function init(ViewExecutable $view, DisplayPluginBase $display, array &$options = NULL) {
   }
 
-  /**
-   * Set default options
-   */
-  function option_definition() {
-    $options = parent::option_definition();
+  protected function defineOptions() {
+    $options = parent::defineOptions();
     $options['data_source'] = array(
       'contains' => array(
         'value' => array('default' => 'asc'),
@@ -83,16 +45,13 @@ class views_plugin_style_geojson extends views_plugin_style {
     return $options;
   }
 
-  /**
-   * Provide a form for setting options.
-   */
-  function options_form(&$form, &$form_state) {
-    parent::options_form($form, $form_state);
+  public function buildOptionsForm(&$form, FormStateInterface $form_state) {
+    parent::buildOptionsForm($form, $form_state);
 
     $fields = array();
 
     // Get list of fields in this view & flag available geodata fields.
-    $handlers = $this->display->handler->get_handlers('field');
+    $handlers = $this->displayHandler->getHandlers('field');
 
     // Check for any fields, as the view needs them.
     if (empty($handlers)) {
@@ -112,6 +71,7 @@ class views_plugin_style_geojson extends views_plugin_style {
       if (!empty($handler->field_info)) {
         $field_info = $handler->field_info;
       }
+      // Check if $handler is an entity views handler
       elseif ($this->is_entity_views_handler($handler)) {
         // Strip the basic field name from the entity views handler field and
         // fetch the field info for it.
@@ -275,86 +235,7 @@ class views_plugin_style_geojson extends views_plugin_style {
     );
   }
 
-  /**
-   * Implementation of view_style_plugin::render().
-   */
-  function render() {
-    $args = func_get_args();
-    $results = array_shift($args);
-
-    $features = array(
-      'type' => 'FeatureCollection',
-      'features' => array(),
-    );
-
-    // Render each row.
-    foreach ($results as $i => $row) {
-      $this->view->row_index = $i;
-      if ($feature = _views_geojson_render_fields($this->view, $row, $i)) {
-        $features['features'][] = $feature;
-      }
-    }
-    unset($this->view->row_index);
-
-    // Render the collection to JSON.
-    $json = drupal_json_encode($features);
-
-    if (!empty($this->options['jsonp_prefix'])) {
-      $json = $this->options['jsonp_prefix'] . "($json)";
-    }
-
-    if (!empty($this->view->preview)) {
-      // Pretty-print the JSON. This only works for 'page' displays.
-      $json = _views_geojson_encode_formatted($features);
-      if (!empty($this->options['jsonp_prefix'])) {
-        $json = $this->options['jsonp_prefix'] . "($json)";
-      }
-      if ($this->display->display_plugin == 'page') {
-        $json = "<pre>$json</pre>";
-      }
-    }
-    else {
-      if ($this->display->display_plugin == 'page' && !$this->options['using_views_api_mode']) {
-        // Change the content type header since we're sending a JSON response.
-        $content_type = ($this->options['content_type'] == 'default') ? 'application/json' : $this->options['content_type'];
-        drupal_add_http_header("Content-Type", "$content_type; charset=utf-8");
-
-        // Page display prints and exits; this is BAD (prevents caching) but
-        // supports legacy configurations.
-        print $json;
-        drupal_exit();
-      }
-    }
-
-    // Everything else returns output.
-    return $json;
+  public function render() {
   }
 
-  /**
-   * Checks if a field handler class is handled by the entity module.
-   *
-   * @param object $field_handler_instance
-   *   The field handler instance to check.
-   *
-   * @return bool
-   *   TRUE if the field is handled by the entity module views integration.
-   */
-  public function is_entity_views_handler($field_handler_instance) {
-    if (!module_exists('entity')) {
-      return FALSE;
-    }
-
-    $static_cache = &drupal_static(__METHOD__, array());
-    $handler_class = get_class($field_handler_instance);
-
-    if (!isset($static_cache[$handler_class])) {
-      $static_cache[$handler_class] = FALSE;
-      foreach (entity_views_get_field_handlers() as $field_handler) {
-        if ($field_handler_instance instanceof $field_handler) {
-          return $static_cache[$handler_class] = TRUE;
-        }
-      }
-    }
-    return $static_cache[$handler_class];
-  }
 }
