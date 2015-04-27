@@ -1,15 +1,11 @@
 <?php
 
-// TODO: Is this how this should be namespaced?
-namespace views_geojson\Plugin\views\style;
+namespace Drupal\views_geojson\Plugin\views\style;
 
-use Drupal\Component\Utility\Html;
 use Drupal\Core\Form\FormStateInterface;
-use Drupal\views\Plugin\views\PluginBase;
-use Drupal\views\Plugin\views\display\DisplayPluginBase;
-use Drupal\views\Plugin\views\wizard\WizardInterface;
 use Drupal\views\Plugin\views\style\StylePluginBase;
-use Drupal\views\ViewExecutable;
+use Symfony\Component\DependencyInjection\ContainerInterface;
+use Symfony\Component\Serializer\SerializerInterface;
 
 /**
  * Style plugin to render view as GeoJSON code.
@@ -19,30 +15,66 @@ use Drupal\views\ViewExecutable;
  * @ViewsStyle(
  *   id = "geojson",
  *   title = @Translation("GeoJSON"),
- *   help = @Translation("Displays nodes in the GeoJSON data format."),
- *   theme = "views_view_geojson",
- *   display_types = {"normal"}
+ *   help = @Translation("Displays field data in GeoJSON data format."),
+ *   display_types = {"data"}
  * )
  */
-class GeoJSON extends StylePluginBase {
+class GeoJson extends StylePluginBase {
 
   /**
-   * Does the style plugin support grouping of rows.
-   *
-   * @var bool
+   * Overrides \Drupal\views\Plugin\views\style\StylePluginBase::$usesRowPlugin.
+   */
+  protected $usesRowPlugin = FALSE;
+
+  /**
+   * Overrides \Drupal\views\Plugin\views\style\StylePluginBase::$usesFields.
+   */
+  protected $usesFields = TRUE;
+
+  /**
+   * Overrides \Drupal\views\Plugin\views\style\StylePluginBase::$usesRowClass.
+   */
+  protected $usesRowClass = FALSE;
+
+  /**
+   * Overrides Drupal\views\Plugin\views\style\StylePluginBase::$usesGrouping.
    */
   protected $usesGrouping = FALSE;
 
   /**
-   * Does the style plugin for itself support to add fields to it's output.
+   * The serializer which serializes the views result.
    *
-   * This option only makes sense on style plugins without row plugins, like
-   * for example table.
-   *
-   * @var bool
+   * @var \Symfony\Component\Serializer\Serializer
    */
-  protected $usesFields = TRUE;
+  protected $serializer;
 
+  /**
+   * {@inheritdoc}
+   */
+  public static function create(ContainerInterface $container, array $configuration, $plugin_id, $plugin_definition) {
+    return new static(
+      $configuration,
+      $plugin_id,
+      $plugin_definition,
+      $container->get('serializer'),
+      $container->getParameter('serializer.formats')
+    );
+  }
+
+  /**
+   * Constructs a Plugin object.
+   */
+  public function __construct(array $configuration, $plugin_id, $plugin_definition, SerializerInterface $serializer, array $serializer_formats) {
+    parent::__construct($configuration, $plugin_id, $plugin_definition);
+
+    $this->definition = $plugin_definition + $configuration;
+    $this->serializer = $serializer;
+    $this->formats = $serializer_formats;
+  }
+
+  /**
+   * {@inheritdoc}.
+   */
   protected function defineOptions() {
     $options = parent::defineOptions();
     $options['data_source'] = array(
@@ -61,17 +93,12 @@ class GeoJSON extends StylePluginBase {
       'default' => NULL,
       'translatable' => FALSE
     );
-    $options['content_type'] = array(
-      'default' => 'default',
-      'translatable' => FALSE
-    );
-    $options['using_views_api_mode'] = array(
-      'default' => FALSE,
-      'translatable' => FALSE
-    );
     return $options;
   }
 
+  /**
+   * {@inheritdoc}.
+   */
   public function buildOptionsForm(&$form, FormStateInterface $form_state) {
     parent::buildOptionsForm($form, $form_state);
 
@@ -80,6 +107,7 @@ class GeoJSON extends StylePluginBase {
 
     // Get list of fields in this view & flag available geodata fields.
     $handlers = $this->displayHandler->getHandlers('field');
+    $field_definition = $this->displayHandler->getOption('fields');
 
     // Check for any fields, as the view needs them.
     if (empty($handlers)) {
@@ -92,9 +120,9 @@ class GeoJSON extends StylePluginBase {
     }
 
     // Go through fields, fill $fields and $fields_info arrays.
-    foreach ($handlers as $field_id => $handler) {
+    foreach ($this->displayHandler->getHandlers('field') as $field_id => $handler) {
       $fields[$field_id] = $handler->definition['title'];
-      $fields_info[$field_id]['type'] = $handler->getEntityType();
+      $fields_info[$field_id]['type'] = $field_definition[$field_id]['type'];
     }
 
     // Default data source.
@@ -128,7 +156,6 @@ class GeoJSON extends StylePluginBase {
         '#description' => t('Choose a field for Latitude.  This should be a field that is a decimal or float value.'),
         '#options' => $fields,
         '#default_value' => $this->options['data_source']['latitude'],
-        '#process' => array('ctools_dependent_process'),
         '#dependency' => array('edit-style-options-data-source-value' => array('latlon')),
       );
 
@@ -138,14 +165,13 @@ class GeoJSON extends StylePluginBase {
         '#description' => t('Choose a field for Longitude.  This should be a field that is a decimal or float value.'),
         '#options' => $fields,
         '#default_value' => $this->options['data_source']['longitude'],
-        '#process' => array('ctools_dependent_process'),
         '#dependency' => array('edit-style-options-data-source-value' => array('latlon')),
       );
 
       // Get Geofield-type fields.
       $geofield_fields = array();
       foreach ($fields as $field_id => $field) {
-        if ($fields_info[$field_id]['type'] == 'geofield') {
+        if ($fields_info[$field_id]['type'] == 'geofield_default') {
           $geofield_fields[$field_id] = $field;
         }
       }
@@ -155,9 +181,8 @@ class GeoJSON extends StylePluginBase {
         '#type' => 'select',
         '#title' => t('Geofield'),
         '#description' => t("Choose a Geofield field. Any formatter will do; we'll access Geofield's underlying WKT format."),
-        '#options' => $geofield_fields,
+        '#options' => $fields,
         '#default_value' => $this->options['data_source']['geofield'],
-        '#process' => array('ctools_dependent_process'),
         '#dependency' => array('edit-style-options-data-source-value' => array('geofield')),
       );
 
@@ -168,7 +193,6 @@ class GeoJSON extends StylePluginBase {
         '#description' => t('Choose a WKT format field.'),
         '#options' => $fields,
         '#default_value' => $this->options['data_source']['wkt'],
-        '#process' => array('ctools_dependent_process'),
         '#dependency' => array('edit-style-options-data-source-value' => array('wkt')),
       );
     }
@@ -205,17 +229,6 @@ class GeoJSON extends StylePluginBase {
       '#title' => t('JSONP prefix'),
       '#default_value' => $this->options['jsonp_prefix'],
       '#description' => t('If used the JSON output will be enclosed with parentheses and prefixed by this label, as in the JSONP format.'),
-    );
-
-    $form['content_type'] = array(
-      '#type' => 'radios',
-      '#title' => t('Content-Type'),
-      '#options' => array(
-        'default' => t("Default: application/json"),
-        'text/json' => t('text/json'),
-      ),
-      '#default_value' => $this->options['content_type'],
-      '#description' => t('The Content-Type header that will be sent with the JSON output.'),
     );
 
     // Make array of attributes.
@@ -261,6 +274,37 @@ class GeoJSON extends StylePluginBase {
   }
 
   public function render() {
+    $features = array(
+      'type' => 'FeatureCollection',
+      'features' => array(),
+    );
+
+    // Render each row.
+    foreach ($this->view->result as $i => $row) {
+      $this->view->row_index = $i;
+      if ($feature = _views_geojson_render_fields($this->view, $row, $i)) {
+        $features['features'][] = $feature;
+      }
+    }
+    unset($this->view->row_index);
+
+    // Render the collection to JSON.
+    $json = \Drupal\Component\Serialization\Json::encode($features);
+
+    if (!empty($this->options['jsonp_prefix'])) {
+      $json = $this->options['jsonp_prefix'] . "($json)";
+    }
+
+    if (!empty($this->view->live_preview)) {
+      // Pretty-print the JSON. This only works for 'page' displays.
+      $json = _views_geojson_encode_formatted($features);
+      if (!empty($this->options['jsonp_prefix'])) {
+        $json = $this->options['jsonp_prefix'] . "($json)";
+      }
+    }
+
+    // Everything else returns output.
+    return $json;
   }
 
 }
