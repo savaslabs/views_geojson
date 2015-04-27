@@ -1,7 +1,7 @@
 <?php
 
 // TODO: Is this how this should be namespaced?
-namespace Drupal\views_geojson\Plugin\views\style;
+namespace Drupal\views_geojson\Plugin\views\argument_default;
 
 // TODO: Which need to be included?
 use Drupal\views\Plugin\views\argument_default\QueryParameter;
