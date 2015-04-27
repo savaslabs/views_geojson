@@ -4,6 +4,8 @@ namespace Drupal\views_geojson\Plugin\views\style;
 
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\views\Plugin\views\style\StylePluginBase;
+use Drupal\views\ViewExecutable;
+use Drupal\views\Plugin\views\Display\DisplayPluginBase;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\Serializer\SerializerInterface;
 
@@ -16,7 +18,6 @@ use Symfony\Component\Serializer\SerializerInterface;
  *   id = "geojson",
  *   title = @Translation("GeoJSON"),
  *   theme = "views_view_geojson",
- *   display_types = {"normal"}
  *   description = @Translation("Displays field data in GeoJSON data format."),
  *   display_types = {"data"}
  * )
@@ -80,6 +81,8 @@ class GeoJson extends StylePluginBase {
   public function init(ViewExecutable $view, DisplayPluginBase $display, array &$options = NULL) {
 
     parent::init($view, $display, $options);
+    // TODO: Fix broken code below.
+    return;
 
     // Search api indexes store the entity metadata in the views data array.
     if (strpos($view->storage->get('base_table'), 'search_api_index_') === 0) {
