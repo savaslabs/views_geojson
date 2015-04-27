@@ -6,3 +6,5 @@ package: Views
 dependencies:
   - views
   - geophp
+  - serialization
+  - rest
