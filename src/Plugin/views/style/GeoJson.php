@@ -192,8 +192,12 @@ class GeoJson extends StylePluginBase {
         '#description' => t('Choose a field for Latitude.  This should be a field that is a decimal or float value.'),
         '#options' => $fields,
         '#default_value' => $this->options['data_source']['latitude'],
-        '#dependency' => array('edit-style-options-data-source-value' => array('latlon')),
-      );
+        '#states' => array(
+          'visible' => array(
+            ':input[name="style_options[data_source][value]"]' => array('value' => 'latlon'),
+          ),
+        ),
+        );
 
       $form['data_source']['longitude'] = array(
         '#type' => 'select',
@@ -201,8 +205,12 @@ class GeoJson extends StylePluginBase {
         '#description' => t('Choose a field for Longitude.  This should be a field that is a decimal or float value.'),
         '#options' => $fields,
         '#default_value' => $this->options['data_source']['longitude'],
-        '#dependency' => array('edit-style-options-data-source-value' => array('latlon')),
-      );
+        '#states' => array(
+          'visible' => array(
+            ':input[name="style_options[data_source][value]"]' => array('value' => 'latlon'),
+          ),
+        ),
+        );
 
       // Get Geofield-type fields.
       $geofield_fields = array();
@@ -219,8 +227,12 @@ class GeoJson extends StylePluginBase {
         '#description' => t("Choose a Geofield field. Any formatter will do; we'll access Geofield's underlying WKT format."),
         '#options' => $fields,
         '#default_value' => $this->options['data_source']['geofield'],
-        '#dependency' => array('edit-style-options-data-source-value' => array('geofield')),
-      );
+        '#states' => array(
+          'visible' => array(
+            ':input[name="style_options[data_source][value]"]' => array('value' => 'geofield'),
+          ),
+        ),
+        );
 
       // WKT.
       $form['data_source']['wkt'] = array(
@@ -229,8 +241,12 @@ class GeoJson extends StylePluginBase {
         '#description' => t('Choose a WKT format field.'),
         '#options' => $fields,
         '#default_value' => $this->options['data_source']['wkt'],
-        '#dependency' => array('edit-style-options-data-source-value' => array('wkt')),
-      );
+        '#states' => array(
+          'visible' => array(
+            ':input[name="style_options[data_source][value]"]' => array('value' => 'wkt'),
+          ),
+        ),
+        );
     }
 
     $form['data_source']['name_field'] = array(
