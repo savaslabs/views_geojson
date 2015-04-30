@@ -192,7 +192,7 @@ class GeoJson extends StylePluginBase {
         '#type' => 'select',
         '#title' => t('Geofield'),
         '#description' => t("Choose a Geofield field. Any formatter will do; we'll access Geofield's underlying WKT format."),
-        '#options' => $fields,
+        '#options' => $geofield_fields,
         '#default_value' => $this->options['data_source']['geofield'],
         '#states' => array(
           'visible' => array(
