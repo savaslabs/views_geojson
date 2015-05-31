@@ -288,7 +288,4 @@ class GeoJsonExport extends PathPluginBase {
     return $this->view->render();
   }
 
-  public function getFormats() {
-    return 'json';
-  }
 }

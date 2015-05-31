@@ -329,4 +329,11 @@ class GeoJson extends StylePluginBase {
     return $json;
   }
 
+  /**
+   * {@inheritdoc}
+   */
+  public function getFormats() {
+    return $this->formats;
+  }
+
 }
