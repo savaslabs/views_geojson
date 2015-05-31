@@ -66,9 +66,19 @@ class GeoJsonExport extends PathPluginBase {
    */
   protected $mimeType;
 
+  /**
+   * The renderer.
+   *
+   * @var \Drupal\Core\Render\RendererInterface
+   */
+  protected $renderer;
 
-  public function __construct(array $configuration, $plugin_id, $plugin_definition, RouteProviderInterface $route_provider, StateInterface $state) {
+  /**
+   * Constructs a Drupal\rest\Plugin\ResourceBase object.
+   */
+  public function __construct(array $configuration, $plugin_id, $plugin_definition, RouteProviderInterface $route_provider, StateInterface $state, RendererInterface $renderer) {
     parent::__construct($configuration, $plugin_id, $plugin_definition, $route_provider, $state);
+    $this->renderer = $renderer;
   }
 
   /**
@@ -81,6 +91,7 @@ class GeoJsonExport extends PathPluginBase {
       $plugin_definition,
       $container->get('router.route_provider'),
       $container->get('state')
+      $container->get('renderer')
     );
   }
 
@@ -89,18 +100,9 @@ class GeoJsonExport extends PathPluginBase {
    */
   public function initDisplay(ViewExecutable $view, array &$display, array &$options = NULL) {
     parent::initDisplay($view, $display, $options);
-
-    $request_content_type = $this->view->getRequest()->getRequestFormat();
-    // Only use the requested content type if it's not 'html'. If it is then
-    // default to 'json' to aid debugging.
-    // @todo Remove the need for this when we have better content negotiation.
-    if ($request_content_type != 'html') {
-      $this->setContentType($request_content_type);
-    }
-
+    $this->setContentType('json');
     $this->setMimeType($this->view->getRequest()
       ->getMimeType($this->contentType));
-
   }
 
   /**
@@ -240,7 +242,13 @@ class GeoJsonExport extends PathPluginBase {
     parent::execute();
 
     $output = $this->view->render();
-    return new Response(drupal_render_root($output), 200, array('Content-type' => $this->getMimeType()));
+    $header = [];
+    $header['Content-Type'] = $this->getMimeType();
+
+    $response = new CacheableResponse($this->renderer->renderRoot($output), 200);
+    $cache_metadata = CacheableMetadata::createFromRenderArray($output);
+    $response->addCacheableDependency($cache_metadata);
+    return $response;
   }
 
   /**
@@ -253,9 +261,19 @@ class GeoJsonExport extends PathPluginBase {
     // Wrap the output in a pre tag if this is for a live preview.
     if (!empty($this->view->live_preview)) {
       $build['#prefix'] = '<pre>';
-      $build['#markup'] = String::checkPlain($build['#markup']);
+      $build['#markup'] = SafeMarkup::checkPlain($build['#markup']);
       $build['#suffix'] = '</pre>';
     }
+
+    // Defaults for bubbleable rendering metadata.
+    $build['#cache']['tags'] = isset($build['#cache']['tags']) ? $build['#cache']['tags'] : array();
+    $build['#cache']['max-age'] = isset($build['#cache']['max-age']) ? $build['#cache']['max-age'] : Cache::PERMANENT;
+
+    /** @var \Drupal\views\Plugin\views\cache\CachePluginBase $cache */
+    $cache = $this->getPlugin('cache');
+
+    $build['#cache']['tags'] = Cache::mergeTags($build['#cache']['tags'], $cache->getCacheTags());
+    $build['#cache']['max-age'] = Cache::mergeMaxAges($build['#cache']['max-age'], $cache->getCacheMaxAge());
 
     return $build;
   }
@@ -268,5 +286,9 @@ class GeoJsonExport extends PathPluginBase {
    */
   public function preview() {
     return $this->view->render();
+  }
+
+  public function getFormats() {
+    return 'json';
   }
 }
