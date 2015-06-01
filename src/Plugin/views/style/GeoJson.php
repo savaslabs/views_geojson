@@ -182,9 +182,11 @@ class GeoJson extends StylePluginBase {
       // Get Geofield-type fields.
       $geofield_fields = array();
       foreach ($fields as $field_id => $field) {
-        if ($fields_info[$field_id]['type'] == 'geofield_default') {
-          $geofield_fields[$field_id] = $field;
-        }
+        // @TODO We need to check if the field type is `geofield_default`. But
+        // at the moment this information is missing from the array, due to a
+        // bug with Geofield 8.x-1.x-dev. When the bug is fixed, we can add a
+        // check here again.
+        $geofield_fields[$field_id] = $field;
       }
 
       // Geofield.
