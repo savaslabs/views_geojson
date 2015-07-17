@@ -90,7 +90,7 @@ class GeoJsonExport extends PathPluginBase {
       $plugin_id,
       $plugin_definition,
       $container->get('router.route_provider'),
-      $container->get('state')
+      $container->get('state'),
       $container->get('renderer')
     );
   }
