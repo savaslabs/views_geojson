@@ -3,7 +3,7 @@
     "version": "master",
     "type": "drupal-module",
     "soure": {
-        "url": "git@github:aboutsam/views_geojson.git",
+        "url": "git@github:savaslabs/views_geojson.git",
         "type": "git"
     }
 }
