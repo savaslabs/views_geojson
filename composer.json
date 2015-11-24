@@ -1,0 +1,10 @@
+{
+    "name": "drupal/views_geojson",
+    "version": "master",
+    "type": "drupal-module",
+    "soure": {
+        "url": "git@github:aboutsam/views_geojson.git",
+        "type": "git"
+    }
+}
+
