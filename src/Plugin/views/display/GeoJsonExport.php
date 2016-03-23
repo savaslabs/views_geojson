@@ -2,14 +2,15 @@
 
 namespace Drupal\views_geojson\Plugin\views\display;
 
-use Drupal\rest\Plugin\views\display\RestExport;
+use Drupal\Core\Cache\Cache;
+use Drupal\Core\Cache\CacheableMetadata;
+use Drupal\Core\Cache\CacheableResponse;
+use Drupal\Core\Render\RendererInterface;
 use Drupal\views\ViewExecutable;
-use Drupal\Component\Utility\String;
 use Drupal\Core\State\StateInterface;
 use Drupal\Core\Routing\RouteProviderInterface;
 use Drupal\views\Plugin\views\display\PathPluginBase;
 use Symfony\Component\DependencyInjection\ContainerInterface;
-use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\RouteCollection;
 
 /**
@@ -108,7 +109,7 @@ class GeoJsonExport extends PathPluginBase {
   /**
    * {@inheritdoc}
    */
-  protected function getType() {
+  public function getType() {
     return 'data';
   }
 
@@ -228,7 +229,10 @@ class GeoJsonExport extends PathPluginBase {
     if ($route = $collection->get("view.$view_id.$display_id")) {
       $style_plugin = $this->getPlugin('style');
       // REST exports should only respond to get methods.
-      $requirements = array('_method' => 'GET');
+      $requirements = [
+        '_method' => 'GET',
+        '_format' => 'json',
+      ];
 
       // Add the new requirements to the route.
       $route->addRequirements($requirements);
@@ -245,8 +249,8 @@ class GeoJsonExport extends PathPluginBase {
     $header = [];
     $header['Content-Type'] = $this->getMimeType();
 
-    $response = new CacheableResponse($this->renderer->renderRoot($output), 200);
-    $cache_metadata = CacheableMetadata::createFromRenderArray($output);
+    $response = new \Drupal\Core\Cache\CacheableResponse($this->renderer->renderRoot($output), 200);
+    $cache_metadata = \Drupal\Core\Cache\CacheableMetadata::createFromRenderArray($output);
     $response->addCacheableDependency($cache_metadata);
     return $response;
   }
@@ -261,13 +265,13 @@ class GeoJsonExport extends PathPluginBase {
     // Wrap the output in a pre tag if this is for a live preview.
     if (!empty($this->view->live_preview)) {
       $build['#prefix'] = '<pre>';
-      $build['#markup'] = SafeMarkup::checkPlain($build['#markup']);
+      $build['#markup'] = \Drupal\Component\Utility\SafeMarkup::checkPlain($build['#markup']);
       $build['#suffix'] = '</pre>';
     }
 
     // Defaults for bubbleable rendering metadata.
     $build['#cache']['tags'] = isset($build['#cache']['tags']) ? $build['#cache']['tags'] : array();
-    $build['#cache']['max-age'] = isset($build['#cache']['max-age']) ? $build['#cache']['max-age'] : Cache::PERMANENT;
+    $build['#cache']['max-age'] = isset($build['#cache']['max-age']) ? $build['#cache']['max-age'] : \Drupal\Core\Cache\Cache::PERMANENT;
 
     /** @var \Drupal\views\Plugin\views\cache\CachePluginBase $cache */
     $cache = $this->getPlugin('cache');
@@ -286,6 +290,33 @@ class GeoJsonExport extends PathPluginBase {
    */
   public function preview() {
     return $this->view->render();
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public static function buildResponse($view_id, $display_id, array $args = []) {
+    $build = static::buildBasicRenderable($view_id, $display_id, $args);
+
+    // Set up an empty response, so for example RSS can set the proper
+    // Content-Type header.
+    $response = new CacheableResponse('', 200);
+    $build['#response'] = $response;
+
+    /** @var \Drupal\Core\Render\RendererInterface $renderer */
+    $renderer = \Drupal::service('renderer');
+
+    $output = (string) $renderer->renderRoot($build);
+
+    if (empty($output)) {
+      //throw new NotFoundHttpException();
+    }
+
+    $response->setContent($output);
+    $cache_metadata = CacheableMetadata::createFromRenderArray($build);
+    $response->addCacheableDependency($cache_metadata);
+
+    return $response;
   }
 
 }
