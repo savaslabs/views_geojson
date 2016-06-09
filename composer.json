@@ -2,9 +2,12 @@
     "name": "drupal/views_geojson",
     "version": "master",
     "type": "drupal-module",
-    "soure": {
+    "source": {
         "url": "git@github:savaslabs/views_geojson.git",
         "type": "git"
+    },
+    "require": {
+        "phayes/geophp": "dev-master"
     }
 }
 
