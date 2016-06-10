@@ -23,9 +23,9 @@ REQUIREMENTS
 ------------
 
 Drupal modules:
-* Views - http://drupal.org/project/views
-* geoPHP - http://drupal.org/project/geophp
-
+* Views
+* Serialization
+* Rest
 
 INSTALLATION
 ------------

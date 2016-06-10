@@ -52,6 +52,7 @@ function _views_geojson_render_fields($view, $row, $index) {
       break;
 
     case 'geofield':
+      $geophp = \Drupal::getContainer()->get('geofield.geophp');
       foreach ($view->field as $field_idx => $field) {
         if ($data_source['geofield'] == $field_idx) {
           $geofield = $view->style_plugin->getFieldValue($index, $field_idx);
@@ -64,8 +65,7 @@ function _views_geojson_render_fields($view, $row, $index) {
         }
       }
       if (!empty($geofield)) {
-        geophp_load();
-        $json = geoPHP::load($geofield);
+        $json = $geophp->load($geofield);
         if (is_object($json)) {
           $feature['geometry'] = \Drupal\Component\Serialization\Json::decode($json->out('json'));
         }
@@ -81,8 +81,7 @@ function _views_geojson_render_fields($view, $row, $index) {
         }
       }
       if (!empty($wkt)) {
-        geophp_load();
-        $json = geoPHP::load($wkt, 'wkt');
+        $json = \geoPHP::load($wkt, 'wkt');
         if (is_object($json)) {
           $feature['geometry'] = \Drupal\Component\Serialization\Json::decode($json->out('json'));
         }
