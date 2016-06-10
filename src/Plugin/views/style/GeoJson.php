@@ -4,8 +4,7 @@ namespace Drupal\views_geojson\Plugin\views\style;
 
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\views\Plugin\views\style\StylePluginBase;
-use Drupal\views\ViewExecutable;
-use Drupal\views\Plugin\views\Display\DisplayPluginBase;
+use Drupal\views\ResultRow;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\Serializer\SerializerInterface;
 
@@ -306,7 +305,7 @@ class GeoJson extends StylePluginBase {
     // Render each row.
     foreach ($this->view->result as $i => $row) {
       $this->view->row_index = $i;
-      if ($feature = _views_geojson_render_fields($this->view, $row, $i)) {
+      if ($feature = $this->renderFields($row, $i)) {
         $features['features'][] = $feature;
       }
     }
@@ -336,6 +335,140 @@ class GeoJson extends StylePluginBase {
    */
   public function getFormats() {
     return ['json', 'html'];
+  }
+
+  /**
+   * Render views fields to GeoJSON.
+   *
+   * Takes each field from a row object and renders the field as determined by the
+   * field's theme.
+   *
+   * @param \Drupal\views\ResultRow $row
+   *   Row object
+   *
+   * @return array
+   *   Object containing all the raw and rendered fields
+   */
+  protected function renderFields(ResultRow $row, $index) {
+    $excluded_fields = array();
+    $feature = array('type' => 'Feature');
+    $data_source = $this->view->style_plugin->options['data_source'];
+    $field_ids = array_keys($this->view->field);
+
+    // Pre-render fields to handle those rewritten with tokens.
+    foreach ($this->view->field as $field_idx => $field) {
+      $field->advancedRender($row);
+    }
+
+    switch ($data_source['value']) {
+      case 'latlon':
+        $options = array('latitude', 'longitude');
+        $latitude = NULL;
+        $longitude = NULL;
+        foreach ($this->view->field as $field_idx => $field) {
+          foreach ($options as $option) {
+            if ($data_source[$option] == $field_idx) {
+              $option = $field->advancedRender($row);
+              $excluded_fields[] = $field_idx;
+            }
+          }
+        }
+        if (!empty($latitude) && !empty($longitude)) {
+          $feature['geometry'] = array(
+            'type' => 'Point',
+            'coordinates' => array(floatval($longitude), floatval($latitude)),
+          );
+        }
+        break;
+
+      case 'geofield':
+        $geophp = \Drupal::getContainer()->get('geofield.geophp');
+        foreach ($this->view->field as $field_idx => $field) {
+          if ($data_source['geofield'] == $field_idx) {
+            $geofield = $this->view->style_plugin->getFieldValue($index, $field_idx);
+            // FIXME: Figure this bit out. $geofield is in the format "POINT (LAT, LON)", not an array.
+//          if (!empty($geofield)) {
+//            $geofield = (isset($geofield[0]['wkt'])) ? $geofield[0]['wkt'] : $geofield[0]['geom'];
+//          }
+            $this->view->row_index = $index;
+            $excluded_fields[] = $field_idx;
+          }
+        }
+        if (!empty($geofield)) {
+          $json = $geophp->load($geofield);
+          if (is_object($json)) {
+            $feature['geometry'] = \Drupal\Component\Serialization\Json::decode($json->out('json'));
+          }
+        }
+        break;
+
+      case 'wkt':
+        foreach ($this->view->field as $field_idx => $field) {
+          if ($data_source['wkt'] == $field_idx) {
+            $wkt = $field->advanced_render($row);
+            $this->view->row_index = $index;
+            $excluded_fields[] = $field_idx;
+          }
+        }
+        if (!empty($wkt)) {
+          $json = \geoPHP::load($wkt, 'wkt');
+          if (is_object($json)) {
+            $feature['geometry'] = \Drupal\Component\Serialization\Json::decode($json->out('json'));
+          }
+        }
+        break;
+    }
+
+    // Only add features with geometry data.
+    if (empty($feature['geometry'])) {
+      return NULL;
+    }
+
+    // Add the name and description attributes
+    // as chosen through interface.
+    if ($data_source['name_field']) {
+      foreach ($this->view->field as $field_idx => $field) {
+        if ($data_source['name_field'] == $field_idx) {
+          $name_field = $field->advancedRender($row);
+          $excluded_fields[] = $field_idx;
+        }
+      }
+      $feature['properties']['name'] = $name_field;
+    }
+    else {
+      $feature['properties']['name'] = '';
+    }
+
+    if ($data_source['description_field']) {
+      $description_field = NULL;
+      foreach ($this->view->field as $field_idx => $field) {
+        if ($data_source['description_field'] == $field_idx) {
+          $description_field = $field->advancedRender($row);
+          $excluded_fields[] = $field_idx;
+        }
+      }
+      $feature['properties']['description'] = $description_field;
+    }
+    else {
+      $feature['properties']['description'] = '';
+    }
+
+    // Fill in attributes that are not:
+    // - Coordinate fields,
+    // - Name/description (already processed),
+    // - Views "excluded" fields.
+    foreach ($field_ids as $id) {
+      $field = $this->view->field[$id];
+      if (!in_array($id, $excluded_fields, TRUE) && !($field->options['exclude'])) {
+        // Allows you to customize the name of the property by setting a label to
+        // the field.
+        $key = empty($field->options['label']) ? $id : $field->options['label'];
+        $value_rendered = $field->advancedRender($row);
+        $feature['properties'][$key] = is_numeric($value_rendered) ? floatval($value_rendered) : $value_rendered;
+      }
+    }
+
+    return $feature;
   }
 
 }
