@@ -43,6 +43,8 @@ class GeoJson extends StylePluginBase {
    */
   protected $usesGrouping = FALSE;
 
+  protected $excludedFields;
+
   /**
    * The serializer which serializes the views result.
    *
@@ -302,10 +304,12 @@ class GeoJson extends StylePluginBase {
       'features' => array(),
     );
 
+    $excluded_fields = $this->getExcludedFields();
+
     // Render each row.
     foreach ($this->view->result as $i => $row) {
       $this->view->row_index = $i;
-      if ($feature = $this->renderFields($row, $i)) {
+      if ($feature = $this->renderFields($row, $i, $excluded_fields)) {
         $features['features'][] = $feature;
       }
     }
@@ -349,8 +353,7 @@ class GeoJson extends StylePluginBase {
    * @return array
    *   Object containing all the raw and rendered fields
    */
-  protected function renderFields(ResultRow $row, $index) {
-    $excluded_fields = array();
+  protected function renderFields(ResultRow $row, $index, $excluded_fields) {
     $feature = array('type' => 'Feature');
     $data_source = $this->view->style_plugin->options['data_source'];
     $field_ids = array_keys($this->view->field);
@@ -369,7 +372,6 @@ class GeoJson extends StylePluginBase {
           foreach ($options as $option) {
             if ($data_source[$option] == $field_idx) {
               $option = $field->advancedRender($row);
-              $excluded_fields[] = $field_idx;
             }
           }
         }
@@ -391,7 +393,6 @@ class GeoJson extends StylePluginBase {
 //            $geofield = (isset($geofield[0]['wkt'])) ? $geofield[0]['wkt'] : $geofield[0]['geom'];
 //          }
             $this->view->row_index = $index;
-            $excluded_fields[] = $field_idx;
           }
         }
         if (!empty($geofield)) {
@@ -407,7 +408,6 @@ class GeoJson extends StylePluginBase {
           if ($data_source['wkt'] == $field_idx) {
             $wkt = $field->advanced_render($row);
             $this->view->row_index = $index;
-            $excluded_fields[] = $field_idx;
           }
         }
         if (!empty($wkt)) {
@@ -426,32 +426,8 @@ class GeoJson extends StylePluginBase {
 
     // Add the name and description attributes
     // as chosen through interface.
-    if ($data_source['name_field']) {
-      foreach ($this->view->field as $field_idx => $field) {
-        if ($data_source['name_field'] == $field_idx) {
-          $name_field = $field->advancedRender($row);
-          $excluded_fields[] = $field_idx;
-        }
-      }
-      $feature['properties']['name'] = $name_field;
-    }
-    else {
-      $feature['properties']['name'] = '';
-    }
-
-    if ($data_source['description_field']) {
-      $description_field = NULL;
-      foreach ($this->view->field as $field_idx => $field) {
-        if ($data_source['description_field'] == $field_idx) {
-          $description_field = $field->advancedRender($row);
-          $excluded_fields[] = $field_idx;
-        }
-      }
-      $feature['properties']['description'] = $description_field;
-    }
-    else {
-      $feature['properties']['description'] = '';
-    }
+    $feature['properties']['name'] = $this->renderNameField($row);
+    $feature['properties']['description'] = $this->renderDescriptionField($row);
 
     // Fill in attributes that are not:
     // - Coordinate fields,
@@ -469,6 +445,73 @@ class GeoJson extends StylePluginBase {
     }
 
     return $feature;
+  }
+
+  /**
+   * Retrieves the name field value.
+   *
+   * @param ResultRow $row
+   *  The result row.
+   *
+   * @return string
+   *   The main field value.
+   */
+  protected function renderNameField(ResultRow $row) {
+    return $this->renderMainField($row, 'name_field');
+  }
+
+  /**
+   * Retrieves the description field value.
+   *
+   * @param ResultRow $row
+   *  The result row.
+   *
+   * @return string
+   *   The main field value.
+   */
+  protected function renderDescriptionField(ResultRow $row) {
+    return $this->renderMainField($row, 'description_field');
+  }
+
+  /**
+   * Retrieves the main fields values.
+   *
+   * @param ResultRow $row
+   *   The result row.
+   * @param $field_name
+   *   The main field name.
+   *
+   * @return string
+   *   The main field value.
+   */
+  protected function renderMainField(ResultRow $row, $field_name) {
+    if ($this->options['data_source'][$field_name]) {
+      return $this->view->field[$this->options['data_source'][$field_name]]->advancedRender($row);
+    }
+    else {
+      return '';
+    }
+  }
+
+  protected function getExcludedFields() {
+    $excluded_fields = [
+      $this->options['data_source']['name_field'],
+      $this->options['data_source']['description_field'],
+    ];
+    switch ($this->options['data_source']['value']) {
+      case 'latlon':
+        $excluded_fields[] = $this->options['data_source']['latitude'];
+        $excluded_fields[] = $this->options['data_source']['longitude'];
+        break;
+      case 'geofield':
+        $excluded_fields[] = $this->options['data_source']['geofield'];
+        break;
+      case 'wkt':
+        $excluded_fields[] = $this->options['data_source']['wkt'];
+        break;
+    }
+
+    return $excluded_fields;
   }
 
 }
