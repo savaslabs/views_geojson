@@ -317,7 +317,7 @@ class GeoJson extends StylePluginBase {
     unset($this->view->row_index);
 
     // Render the collection to JSON.
-    $json = \Drupal\Component\Serialization\Json::encode($features);
+    $json = Json::encode($features);
 
     if (!empty($this->options['jsonp_prefix'])) {
       $json = $this->options['jsonp_prefix'] . "($json)";
