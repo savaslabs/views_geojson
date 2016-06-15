@@ -96,7 +96,7 @@ class GeoJson extends StylePluginBase {
     $options['attributes'] = array('default' => NULL, 'translatable' => FALSE);
     $options['jsonp_prefix'] = array(
       'default' => NULL,
-      'translatable' => FALSE
+      'translatable' => FALSE,
     );
     return $options;
   }
@@ -166,7 +166,7 @@ class GeoJson extends StylePluginBase {
             ':input[name="style_options[data_source][value]"]' => array('value' => 'latlon'),
           ),
         ),
-        );
+      );
 
       $form['data_source']['longitude'] = array(
         '#type' => 'select',
@@ -179,7 +179,7 @@ class GeoJson extends StylePluginBase {
             ':input[name="style_options[data_source][value]"]' => array('value' => 'latlon'),
           ),
         ),
-        );
+      );
 
       // Get Geofield-type fields.
       $geofield_fields = array();
@@ -203,7 +203,7 @@ class GeoJson extends StylePluginBase {
             ':input[name="style_options[data_source][value]"]' => array('value' => 'geofield'),
           ),
         ),
-        );
+      );
 
       // WKT.
       $form['data_source']['wkt'] = array(
@@ -217,7 +217,7 @@ class GeoJson extends StylePluginBase {
             ':input[name="style_options[data_source][value]"]' => array('value' => 'wkt'),
           ),
         ),
-        );
+      );
     }
 
     $form['data_source']['name_field'] = array(
@@ -276,7 +276,7 @@ class GeoJson extends StylePluginBase {
     $variables_list = array(
       '#theme' => 'item_list',
       '#items' => $variable_fields,
-      '#attributes' => array('class' => array('description'))
+      '#attributes' => array('class' => array('description')),
     );
 
     $markup = '<p class="description">' .
@@ -424,7 +424,7 @@ class GeoJson extends StylePluginBase {
    * Retrieves the name field value.
    *
    * @param ResultRow $row
-   *  The result row.
+   *   The result row.
    *
    * @return string
    *   The main field value.
@@ -437,7 +437,7 @@ class GeoJson extends StylePluginBase {
    * Retrieves the description field value.
    *
    * @param ResultRow $row
-   *  The result row.
+   *   The result row.
    *
    * @return string
    *   The main field value.
@@ -451,7 +451,7 @@ class GeoJson extends StylePluginBase {
    *
    * @param ResultRow $row
    *   The result row.
-   * @param $field_name
+   * @param string $field_name
    *   The main field name.
    *
    * @return string
@@ -468,8 +468,9 @@ class GeoJson extends StylePluginBase {
 
   /**
    * Retrieves the list of excluded fields due to style plugin configuration.
-   * 
+   *
    * @return array
+   *   List of excluded fields.
    */
   protected function getExcludedFields() {
     $data_source = $this->options['data_source'];
@@ -482,9 +483,11 @@ class GeoJson extends StylePluginBase {
         $excluded_fields[] = $data_source['latitude'];
         $excluded_fields[] = $data_source['longitude'];
         break;
+
       case 'geofield':
         $excluded_fields[] = $data_source['geofield'];
         break;
+
       case 'wkt':
         $excluded_fields[] = $data_source['wkt'];
         break;
