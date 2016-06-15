@@ -270,27 +270,35 @@ class GeoJson extends StylePluginBase {
       }
     }
 
-    // TODO: Figure out what will work here. This syntax is probably wrong!
-    $variables_list = array(
+    $markup = $this->t('Fields added to this view will be attached to their respective feature, (point, line, polygon,) as attributes.
+      These attributes can then be used to add variable styling to your themes. This is accomplished by using the %syntax
+      syntax in the values for a style.  The following is a list of formatted variables that are currently available;
+      these can be placed right in the style interface.', array('%syntax' => '${field_name}'));
+
+    $form['attributes']['styling'][''] = array(
+      '#type' => 'html_tag',
+      '#tag_type' => 'p',
+      '#attributes' => [
+        'class' => [
+          'description',
+        ]
+      ],
+      '#markup' => $markup,
+    );
+    $form['attributes']['styling'][] = array(
       '#theme' => 'item_list',
       '#items' => $variable_fields,
       '#attributes' => array('class' => array('description'))
     );
-
-    $markup = '<p class="description">' .
-      t('Fields added to this view will be attached to their respective feature, (point, line, polygon,) as attributes.
-      These attributes can then be used to add variable styling to your themes. This is accomplished by using the %syntax
-      syntax in the values for a style.  The following is a list of formatted variables that are currently available;
-      these can be placed right in the style interface.', array('%syntax' => '${field_name}'))
-      . '</p>';
-
-    // TODO: Replace this with the dedicated renderer access call (if one exists). See: https://api.drupal.org/api/drupal/core%21lib%21Drupal.php/function/Drupal%3A%3Aservice/8
-    $markup .= \Drupal::service('renderer')->render($variables_list);
-    $markup .= '<p class="description">' . t('Please note that this does not apply to Grouped Displays.') . '</p>';
-
-    $form['attributes']['styling'] = array(
-      '#type' => 'markup',
-      '#markup' => $markup,
+    $form['attributes']['styling'][''] = array(
+      '#type' => 'html_tag',
+      '#tag_type' => 'p',
+      '#attributes' => [
+        'class' => [
+          'description',
+        ]
+      ],
+      '#value' => $this->t('Please note that this does not apply to Grouped Displays.'),
     );
   }
 
