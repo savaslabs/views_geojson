@@ -80,29 +80,8 @@ class GeoJson extends StylePluginBase {
     $this->serializer = $serializer;
     $this->formats = array('json', 'html');
 
-    // Set excluded fields.
-    $data_source = $this->options['data_source'];
-    $this->excludedFields = [
-      $data_source['name_field'],
-      $data_source['description_field'],
-    ];
-    switch ($data_source['value']) {
-      case 'latlon':
-        $this->excludedFields[] = $data_source['latitude'];
-        $this->excludedFields[] = $data_source['longitude'];
-        break;
-
-      case 'geofield':
-        $this->excludedFields[] = $data_source['geofield'];
-        break;
-
-      case 'wkt':
-        $this->excludedFields[] = $data_source['wkt'];
-        break;
-    }
-
     // Flip array for faster lookups in the render loop.
-    $this->excludedFields = array_flip($this->excludedFields);
+    $this->excludedFields = array_flip($this->getExcludedFields());
 
   }
 
@@ -493,6 +472,36 @@ class GeoJson extends StylePluginBase {
     else {
       return '';
     }
+  }
+
+  /**
+   * Retrieves the list of excluded fields due to style plugin configuration.
+   *
+   * @return array
+   *   List of excluded fields.
+   */
+  protected function getExcludedFields() {
+    $data_source = $this->options['data_source'];
+    $excluded_fields = [
+      $data_source['name_field'],
+      $data_source['description_field'],
+    ];
+    switch ($data_source['value']) {
+      case 'latlon':
+        $excluded_fields[] = $data_source['latitude'];
+        $excluded_fields[] = $data_source['longitude'];
+        break;
+
+      case 'geofield':
+        $excluded_fields[] = $data_source['geofield'];
+        break;
+
+      case 'wkt':
+        $excluded_fields[] = $data_source['wkt'];
+        break;
+    }
+
+    return $excluded_fields;
   }
 
 }
