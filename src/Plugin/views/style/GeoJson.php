@@ -2,10 +2,10 @@
 
 namespace Drupal\views_geojson\Plugin\views\style;
 
+use Drupal\Component\Serialization\Json;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\views\Plugin\views\style\StylePluginBase;
-use Drupal\views\ViewExecutable;
-use Drupal\views\Plugin\views\Display\DisplayPluginBase;
+use Drupal\views\ResultRow;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\Serializer\SerializerInterface;
 
@@ -45,6 +45,12 @@ class GeoJson extends StylePluginBase {
   protected $usesGrouping = FALSE;
 
   /**
+   * Cache excluded fields for this instance of the plugin. This is an
+   * associative array with field names as keys.
+   */
+  protected $excludedFields;
+
+  /**
    * The serializer which serializes the views result.
    *
    * @var \Symfony\Component\Serializer\Serializer
@@ -73,6 +79,10 @@ class GeoJson extends StylePluginBase {
     $this->definition = $plugin_definition + $configuration;
     $this->serializer = $serializer;
     $this->formats = array('json', 'html');
+
+    // Flip array for faster lookups in the render loop.
+    $this->excludedFields = array_flip($this->getExcludedFields());
+
   }
 
   /**
@@ -94,7 +104,7 @@ class GeoJson extends StylePluginBase {
     $options['attributes'] = array('default' => NULL, 'translatable' => FALSE);
     $options['jsonp_prefix'] = array(
       'default' => NULL,
-      'translatable' => FALSE
+      'translatable' => FALSE,
     );
     return $options;
   }
@@ -164,7 +174,7 @@ class GeoJson extends StylePluginBase {
             ':input[name="style_options[data_source][value]"]' => array('value' => 'latlon'),
           ),
         ),
-        );
+      );
 
       $form['data_source']['longitude'] = array(
         '#type' => 'select',
@@ -177,7 +187,7 @@ class GeoJson extends StylePluginBase {
             ':input[name="style_options[data_source][value]"]' => array('value' => 'latlon'),
           ),
         ),
-        );
+      );
 
       // Get Geofield-type fields.
       $geofield_fields = array();
@@ -201,7 +211,7 @@ class GeoJson extends StylePluginBase {
             ':input[name="style_options[data_source][value]"]' => array('value' => 'geofield'),
           ),
         ),
-        );
+      );
 
       // WKT.
       $form['data_source']['wkt'] = array(
@@ -215,7 +225,7 @@ class GeoJson extends StylePluginBase {
             ':input[name="style_options[data_source][value]"]' => array('value' => 'wkt'),
           ),
         ),
-        );
+      );
     }
 
     $form['data_source']['name_field'] = array(
@@ -288,7 +298,7 @@ class GeoJson extends StylePluginBase {
     $form['attributes']['styling'][] = array(
       '#theme' => 'item_list',
       '#items' => $variable_fields,
-      '#attributes' => array('class' => array('description'))
+      '#attributes' => array('class' => array('description')),
     );
     $form['attributes']['styling'][''] = array(
       '#type' => 'html_tag',
@@ -314,25 +324,23 @@ class GeoJson extends StylePluginBase {
     // Render each row.
     foreach ($this->view->result as $i => $row) {
       $this->view->row_index = $i;
-      if ($feature = _views_geojson_render_fields($this->view, $row, $i)) {
+      if ($feature = $this->renderRow($row)) {
         $features['features'][] = $feature;
       }
     }
     unset($this->view->row_index);
 
-    // Render the collection to JSON.
-    $json = \Drupal\Component\Serialization\Json::encode($features);
+    if (!empty($this->view->live_preview)) {
+      // Pretty-print the JSON.
+      $json = json_encode($features, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT | JSON_PRETTY_PRINT);
+    }
+    else {
+      // Render the collection to JSON using Drupal standard renderer.
+      $json = Json::encode($features);
+    }
 
     if (!empty($this->options['jsonp_prefix'])) {
       $json = $this->options['jsonp_prefix'] . "($json)";
-    }
-
-    if (!empty($this->view->live_preview)) {
-      // Pretty-print the JSON.
-      $json = _views_geojson_encode_formatted($features);
-      if (!empty($this->options['jsonp_prefix'])) {
-        $json = $this->options['jsonp_prefix'] . "($json)";
-      }
     }
 
     // Everything else returns output.
@@ -344,6 +352,164 @@ class GeoJson extends StylePluginBase {
    */
   public function getFormats() {
     return ['json', 'html'];
+  }
+
+  /**
+   * Render views fields to GeoJSON.
+   *
+   * Takes each field from a row object and renders the field as determined by
+   * the field's theme.
+   *
+   * @param \Drupal\views\ResultRow $row
+   *   Row object.
+   *
+   * @return array
+   *   Array containing all the raw and rendered fields
+   */
+  protected function renderRow(ResultRow $row) {
+    $feature = array('type' => 'Feature');
+    $data_source = $this->options['data_source'];
+
+    // Pre-render fields to handle those rewritten with tokens.
+    foreach ($this->view->field as $field_idx => $field) {
+      $field->advancedRender($row);
+    }
+
+    switch ($data_source['value']) {
+      case 'latlon':
+        $latitude = (string) $this->view->field[$data_source['latitude']]->advancedRender($row);
+        $longitude = (string) $this->view->field[$data_source['longitude']]->advancedRender($row);
+        if (!empty($latitude) && !empty($longitude)) {
+          $feature['geometry'] = array(
+            'type' => 'Point',
+            'coordinates' => array(floatval($longitude), floatval($latitude)),
+          );
+        }
+        break;
+
+      case 'geofield':
+        $geofield = $this->view->style_plugin->getFieldValue($row->index, $data_source['geofield']);
+        if (!empty($geofield)) {
+          $geometry = \Drupal::getContainer()->get('geofield.geophp')->load($geofield);
+          if (is_object($geometry)) {
+            $feature['geometry'] = Json::decode($geometry->out('json'));
+          }
+        }
+        break;
+
+      case 'wkt':
+        $wkt = (string) $this->view->field[$data_source['wkt']]->advancedRender($row);
+        if (!empty($wkt)) {
+          $geometry = \geoPHP::load($wkt, 'wkt');
+          if (is_object($geometry)) {
+            $feature['geometry'] = Json::decode($geometry->out('json'));
+          }
+        }
+        break;
+    }
+
+    // Only add features with geometry data.
+    if (!$feature['geometry']) {
+      return NULL;
+    }
+
+    // Add the name and description attributes
+    // as chosen through interface.
+    $feature['properties']['name'] = $this->renderNameField($row);
+    $feature['properties']['description'] = $this->renderDescriptionField($row);
+
+    // Fill in attributes that are not:
+    // - Coordinate fields,
+    // - Name/description (already processed),
+    // - Views "excluded" fields.
+    foreach (array_keys($this->view->field) as $id) {
+      $field = $this->view->field[$id];
+      if (!isset($this->excludedFields[$id]) && !($field->options['exclude'])) {
+        // Allows you to customize the name of the property by setting a label
+        // to the field.
+        $key = empty($field->options['label']) ? $id : $field->options['label'];
+        $value_rendered = $field->advancedRender($row);
+        $feature['properties'][$key] = is_numeric($value_rendered) ? floatval($value_rendered) : $value_rendered;
+      }
+    }
+
+    return $feature;
+  }
+
+  /**
+   * Retrieves the name field value.
+   *
+   * @param ResultRow $row
+   *   The result row.
+   *
+   * @return string
+   *   The main field value.
+   */
+  protected function renderNameField(ResultRow $row) {
+    return $this->renderMainField($row, 'name_field');
+  }
+
+  /**
+   * Retrieves the description field value.
+   *
+   * @param ResultRow $row
+   *   The result row.
+   *
+   * @return string
+   *   The main field value.
+   */
+  protected function renderDescriptionField(ResultRow $row) {
+    return $this->renderMainField($row, 'description_field');
+  }
+
+  /**
+   * Retrieves the main fields values.
+   *
+   * @param ResultRow $row
+   *   The result row.
+   * @param string $field_name
+   *   The main field name.
+   *
+   * @return string
+   *   The main field value.
+   */
+  protected function renderMainField(ResultRow $row, $field_name) {
+    if ($this->options['data_source'][$field_name]) {
+      return $this->view->field[$this->options['data_source'][$field_name]]->advancedRender($row);
+    }
+    else {
+      return '';
+    }
+  }
+
+  /**
+   * Retrieves the list of excluded fields due to style plugin configuration.
+   *
+   * @return array
+   *   List of excluded fields.
+   */
+  protected function getExcludedFields() {
+    $data_source = $this->options['data_source'];
+    $excluded_fields = [
+      $data_source['name_field'],
+      $data_source['description_field'],
+    ];
+    switch ($data_source['value']) {
+      case 'latlon':
+        $excluded_fields[] = $data_source['latitude'];
+        $excluded_fields[] = $data_source['longitude'];
+        break;
+
+      case 'geofield':
+        $excluded_fields[] = $data_source['geofield'];
+        break;
+
+      case 'wkt':
+        $excluded_fields[] = $data_source['wkt'];
+        break;
+    }
+
+    return $excluded_fields;
   }
 
 }

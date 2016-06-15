@@ -27,6 +27,9 @@ Drupal modules:
 * Serialization
 * Rest
 
+Optional Drupal modules:
+* Geofield 8.x-1.0-alpha2 or greater
+
 INSTALLATION
 ------------
 
