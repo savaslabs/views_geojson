@@ -305,12 +305,10 @@ class GeoJson extends StylePluginBase {
       'features' => array(),
     );
 
-    $excluded_fields = $this->getExcludedFields();
-
     // Render each row.
     foreach ($this->view->result as $i => $row) {
       $this->view->row_index = $i;
-      if ($feature = $this->renderFields($row, $excluded_fields)) {
+      if ($feature = $this->renderRow($row)) {
         $features['features'][] = $feature;
       }
     }
@@ -342,18 +340,16 @@ class GeoJson extends StylePluginBase {
   /**
    * Render views fields to GeoJSON.
    *
-   * Takes each field from a row object and renders the field as determined by the
-   * field's theme.
+   * Takes each field from a row object and renders the field as determined by
+   * the field's theme.
    *
    * @param \Drupal\views\ResultRow $row
-   *   Row object
-   * @param array $excluded fields
-   *   array containing the list of fields to exclude from the rendering.
+   *   Row object.
    *
    * @return array
    *   Array containing all the raw and rendered fields
    */
-  protected function renderFields(ResultRow $row, array $excluded_fields) {
+  protected function renderRow(ResultRow $row) {
     $feature = array('type' => 'Feature');
     $data_source = $this->options['data_source'];
 
@@ -411,9 +407,9 @@ class GeoJson extends StylePluginBase {
     // - Views "excluded" fields.
     foreach (array_keys($this->view->field) as $id) {
       $field = $this->view->field[$id];
-      if (!in_array($id, $excluded_fields, TRUE) && !($field->options['exclude'])) {
-        // Allows you to customize the name of the property by setting a label to
-        // the field.
+      if (!in_array($id, $this->getExcludedFields(), TRUE) && !($field->options['exclude'])) {
+        // Allows you to customize the name of the property by setting a label
+        // to the field.
         $key = empty($field->options['label']) ? $id : $field->options['label'];
         $value_rendered = $field->advancedRender($row);
         $feature['properties'][$key] = is_numeric($value_rendered) ? floatval($value_rendered) : $value_rendered;
