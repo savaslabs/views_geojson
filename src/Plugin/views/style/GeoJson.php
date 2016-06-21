@@ -45,12 +45,6 @@ class GeoJson extends StylePluginBase {
   protected $usesGrouping = FALSE;
 
   /**
-   * Cache excluded fields for this instance of the plugin. This is an
-   * associative array with field names as keys.
-   */
-  protected $excludedFields;
-
-  /**
    * The serializer which serializes the views result.
    *
    * @var \Symfony\Component\Serializer\Serializer
@@ -79,10 +73,6 @@ class GeoJson extends StylePluginBase {
     $this->definition = $plugin_definition + $configuration;
     $this->serializer = $serializer;
     $this->formats = array('json', 'html');
-
-    // Flip array for faster lookups in the render loop.
-    $this->excludedFields = array_flip($this->getExcludedFields());
-
   }
 
   /**
@@ -321,10 +311,13 @@ class GeoJson extends StylePluginBase {
       'features' => array(),
     );
 
+    // Get the excluded fields array, common for all rows.
+    $excluded_fields = $this->getExcludedFields();
+
     // Render each row.
     foreach ($this->view->result as $i => $row) {
       $this->view->row_index = $i;
-      if ($feature = $this->renderRow($row)) {
+      if ($feature = $this->renderRow($row, $excluded_fields)) {
         $features['features'][] = $feature;
       }
     }
@@ -362,11 +355,13 @@ class GeoJson extends StylePluginBase {
    *
    * @param \Drupal\views\ResultRow $row
    *   Row object.
+   * @param array $excluded_fields
+   *   Array containing field keys to be excluded.
    *
    * @return array
    *   Array containing all the raw and rendered fields
    */
-  protected function renderRow(ResultRow $row) {
+  protected function renderRow(ResultRow $row, $excluded_fields) {
     $feature = array('type' => 'Feature');
     $data_source = $this->options['data_source'];
 
@@ -424,7 +419,7 @@ class GeoJson extends StylePluginBase {
     // - Views "excluded" fields.
     foreach (array_keys($this->view->field) as $id) {
       $field = $this->view->field[$id];
-      if (!isset($this->excludedFields[$id]) && !($field->options['exclude'])) {
+      if (!isset($excluded_fields[$id]) && !($field->options['exclude'])) {
         // Allows you to customize the name of the property by setting a label
         // to the field.
         $key = empty($field->options['label']) ? $id : $field->options['label'];
@@ -509,7 +504,7 @@ class GeoJson extends StylePluginBase {
         break;
     }
 
-    return $excluded_fields;
+    return array_combine($excluded_fields, $excluded_fields);
   }
 
 }
